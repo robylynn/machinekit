@@ -25,6 +25,9 @@
 #include "spherical_arc.h"
 #include "blendmath.h"
 
+// Logging
+#include <syslog_async.h>
+
 
 //KLUDGE Don't include all of emc.hh here, just hand-copy the TERM COND
 //definitions until we can break the emc constants out into a separate file.
@@ -2269,6 +2272,7 @@ void tpCalculateTrapezoidalAccel(TP_STRUCT const * const tp,
     double maxnewaccel = (newvel - tc->currentvel) / dt;
     *acc = saturate(maxnewaccel, maxaccel);
     *vel_desired = maxnewvel;
+
 }
 
 /**
@@ -3253,6 +3257,7 @@ int tpRunCycle(TP_STRUCT * const tp, long period)
 #ifdef TC_DEBUG
     EmcPose pos_before = tp->currentPos;
 #endif
+    EmcPose pos_before = tp->currentPos;
 
 
     tcClearFlags(tc);
@@ -3261,8 +3266,31 @@ int tpRunCycle(TP_STRUCT * const tp, long period)
     if (tc->splitting) {
         tpHandleSplitCycle(tp, tc, nexttc);
     } else {
-        tpHandleRegularCycle(tp, tc, nexttc);
+    	tpHandleRegularCycle(tp, tc, nexttc);
     }
+
+    // Added by Roby/Mukul
+    double mag;
+            EmcPose disp;
+            emcPoseSub(&tp->currentPos, &pos_before, &disp);
+            emcPoseMagnitude(&disp, &mag);
+    /*
+    rtapi_set_msg_level(RTAPI_MSG_ERR);
+
+
+    rtapi_print("tp_displacement = %.12e %.12e %.12e time = %.12e\n",
+            disp.tran.x,
+            disp.tran.y,
+            disp.tran.z);
+    rtapi_set_msg_level(RTAPI_MSG_ALL);
+    */
+    static double time_elapsed = 0;
+    time_elapsed+=tp->cycleTime;
+    syslog_async(LOG_ERR,"*MUKUL DATA* %.4e \t %.4e %.4e %.4e\n",
+    		time_elapsed,
+            disp.tran.x,
+            disp.tran.y,
+            disp.tran.z);
 
 #ifdef TC_DEBUG
     double mag;

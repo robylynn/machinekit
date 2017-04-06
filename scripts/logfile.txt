@@ -1,0 +1,355 @@
+MACHINEKIT - 0.1
+Machine configuration directory is '/home/machinekit/machinekit/configs/sim.axis-1'
+Machine configuration file is 'axis_9axis.ini'
+Starting Machinekit...
+io started
+halcmd loadusr io started
+task pid=31686
+task: machine: 'Machinekit-HAL-SIM-AXIS'  version 'unknown'
+emcTaskOnce: Python plugin configured
+emcTaskOnce: extract(task_instance): KeyError: ('task',)
+
+emcTaskOnce: no Python Task() instance available, using default iocontrol-based task methods
+emcTaskInit: using builtin interpreter
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_TERM_COND}) : list_size=1, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=168,type=EMC_TRAJ_SET_G5X}) : list_size=2, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=160,type=EMC_TRAJ_SET_G92}) : list_size=3, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=96,type=EMC_TRAJ_SET_ROTATION}) : list_size=4, line_number=0
+emcTaskPlanInit() returned 0
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_TERM_COND}) : list_size=2, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=168,type=EMC_TRAJ_SET_G5X}) : list_size=3, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=160,type=EMC_TRAJ_SET_G92}) : list_size=4, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=96,type=EMC_TRAJ_SET_ROTATION}) : list_size=5, line_number=0
+emcTaskPlanInit() returned 0
+Issuing EMC_TASK_PLAN_SET_BLOCK_DELETE -- 	 (+518,+24,    +1,\001,)
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TRAJ_SET_TERM_COND -- 	 (+222,+104,    +0,    +2,0.000000,)
+Issuing EMC_TRAJ_SET_G5X -- 	 (+224,+168,    +0,    +1,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,)
+Issuing EMC_TRAJ_SET_G92 -- 	 (+227,+160,    +0,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,)
+Issuing EMC_TRAJ_SET_ROTATION -- 	 (+226,+96,    +0,0.000000,)
+Issuing EMC_TASK_PLAN_SET_OPTIONAL_STOP -- 	 (+517,+24,    +2,\001,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,    +3,    +3,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,    +4,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_OPEN -- 	 (+506,+280,    +5,/home/machinekit/Desktop/machineKit/share/axis/images/axis.ngc,)
+emcTaskPlanOpen(/home/machinekit/Desktop/machineKit/share/axis/images/axis.ngc) returned 0
+Issuing EMC_TRAJ_SET_SCALE -- 	 (+209,+96,    +6,1.000000,)
+Issuing EMC_TRAJ_SET_RAPID_SCALE -- 	 (+238,+96,    +7,1.000000,)
+Issuing EMC_TRAJ_SET_SPINDLE_SCALE -- 	 (+233,+96,    +8,1.000000,)
+Issuing EMC_TRAJ_SET_MAX_VELOCITY -- 	 (+207,+96,    +9,1.200000,)
+Issuing EMC_TRAJ_SET_SPINDLE_SCALE -- 	 (+233,+96,   +10,1.000000,)
+Issuing EMC_TRAJ_SET_RAPID_SCALE -- 	 (+238,+96,   +11,1.000000,)
+Issuing EMC_TRAJ_SET_SCALE -- 	 (+209,+96,   +12,1.000000,)
+Issuing EMC_TASK_SET_STATE -- 	 (+505,+24,   +13,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanClose() called at emc/task/emctask.cc:216
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_STATE -- 	 (+505,+24,   +14,    +4,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +15,    +1,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TRAJ_SET_TELEOP_ENABLE -- 	 (+230,+96,   +16,    +0,)
+Issuing EMC_AXIS_HOME -- 	 (+123,+24,   +17,    -1,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +18,    +3,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +19,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_OPEN -- 	 (+506,+280,   +20,/home/machinekit/Desktop/machineKit/nc_files/linetest.ngc,)
+emcTaskPlanOpen(/home/machinekit/Desktop/machineKit/nc_files/linetest.ngc) returned 0
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +21,    +1,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanClose() called at emc/task/emctask.cc:216
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TRAJ_SET_TELEOP_ENABLE -- 	 (+230,+96,   +22,    +0,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +23,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_RUN -- 	 (+507,+24,   +24,    +0,)
+emcTaskPlanOpen(/home/machinekit/Desktop/machineKit/nc_files/linetest.ngc) returned 0
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanCommand(G20 G90 G64 G40) called. (line_number=1)
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_TERM_COND}) : list_size=1, line_number=0
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanCommand(G0X0Y0Z0) called. (line_number=2)
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanCommand(G1Y1F10) called. (line_number=3)
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanCommand(X1) called. (line_number=4)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=2, line_number=3
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanCommand(Y0) called. (line_number=5)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=3, line_number=4
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanCommand(X0) called. (line_number=6)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=4, line_number=5
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanCommand() called. (line_number=7)
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 8
+emcTaskPlanCommand(M2) called. (line_number=8)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=5, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=168,type=EMC_TRAJ_SET_G5X}) : list_size=6, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=96,type=EMC_TRAJ_SET_ROTATION}) : list_size=7, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_SPINDLESYNC}) : list_size=8, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_SPINDLE_OFF}) : list_size=9, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_END}) : list_size=10, line_number=6
+emcTaskPlanExecute(0) return 1
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 8
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 8
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 8
+Issuing EMC_TRAJ_SET_TERM_COND -- 	 (+222,+104,    +0,    +2,0.000000,)
+Outgoing motion id is 3.
+Issuing EMC_TRAJ_LINEAR_MOVE -- 	 (+220,+200,    +0,0.000000,1.000000,0.000000,0.000000,0.000001,0.000000,0.000000,0.000000,0.000000,    +2,0.166667,1.200000,20.000000,    +0,    -1,)
+Outgoing motion id is 4.
+Issuing EMC_TRAJ_LINEAR_MOVE -- 	 (+220,+200,    +0,1.000000,1.000000,0.000000,0.000000,0.000001,0.000000,0.000000,0.000000,0.000000,    +2,0.166667,1.200000,20.000000,    +0,    -1,)
+Outgoing motion id is 5.
+Issuing EMC_TRAJ_LINEAR_MOVE -- 	 (+220,+200,    +0,1.000000,0.000000,0.000000,0.000000,0.000001,0.000000,0.000000,0.000000,0.000000,    +2,0.166667,1.200000,20.000000,    +0,    -1,)
+Outgoing motion id is 6.
+Issuing EMC_TRAJ_LINEAR_MOVE -- 	 (+220,+200,    +0,0.000000,0.000000,0.000000,0.000000,0.000001,0.000000,0.000000,0.000000,0.000000,    +2,0.166667,1.200000,20.000000,    +0,    -1,)
+Motion id 3 took 5.989320 seconds (current 4)
+Motion id 4 took 5.992934 seconds (current 5)
+Motion id 5 took 5.994269 seconds (current 6)
+Motion id 6 took 6.018239 seconds (current 0)
+Motion id 0 took 0.000001 seconds (current 0).
+Issuing EMC_TRAJ_SET_G5X -- 	 (+224,+168,    +0,    +1,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,)
+Issuing EMC_TRAJ_SET_ROTATION -- 	 (+226,+96,    +0,0.000000,)
+Issuing EMC_TRAJ_SET_SPINDLESYNC -- 	 (+232,+104,    +0,0.000000,\000,)
+Issuing EMC_SPINDLE_OFF -- 	 (+1305,+24,    +0,)
+Issuing EMC_TASK_PLAN_END -- 	 (+513,+24,    +0,)
+emcTaskPlanClose() called at emc/task/emctaskmain.cc:774
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +25,    +1,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TRAJ_SET_TELEOP_ENABLE -- 	 (+230,+96,   +26,    +0,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +27,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_RUN -- 	 (+507,+24,   +28,    +0,)
+emcTaskPlanOpen(/home/machinekit/Desktop/machineKit/nc_files/linetest.ngc) returned 0
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanCommand(G20 G90 G64 G40) called. (line_number=1)
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_TERM_COND}) : list_size=1, line_number=6
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 1
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanCommand(G0X0Y0Z0) called. (line_number=2)
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 2
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanCommand(G1Y1F10) called. (line_number=3)
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 3
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanCommand(X1) called. (line_number=4)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=2, line_number=3
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 4
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanCommand(Y0) called. (line_number=5)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=3, line_number=4
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 5
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanCommand(X0) called. (line_number=6)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=4, line_number=5
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 6
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanCommand() called. (line_number=7)
+emcTaskPlanExecute(0) return 0
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 7
+emcTaskPlanRead() returned 0
+emcTaskPlanLine() returned 8
+emcTaskPlanCommand(M2) called. (line_number=8)
+NML_INTERP_LIST::append(nml_msg_ptr{size=200,type=EMC_TRAJ_LINEAR_MOVE}) : list_size=5, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=168,type=EMC_TRAJ_SET_G5X}) : list_size=6, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=96,type=EMC_TRAJ_SET_ROTATION}) : list_size=7, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_SPINDLESYNC}) : list_size=8, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_SPINDLE_OFF}) : list_size=9, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_END}) : list_size=10, line_number=6
+emcTaskPlanExecute(0) return 1
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 8
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 8
+emcTaskPlanLevel() returned 0
+emcTaskPlanLine() returned 8
+Issuing EMC_TRAJ_SET_TERM_COND -- 	 (+222,+104,    +0,    +2,0.000000,)
+Outgoing motion id is 3.
+Issuing EMC_TRAJ_LINEAR_MOVE -- 	 (+220,+200,    +0,0.000000,1.000000,0.000000,0.000000,0.000001,0.000000,0.000000,0.000000,0.000000,    +2,0.166667,1.200000,20.000000,    +0,    -1,)
+USRMOT: ERROR: command timeout
+emcTaskIssueCommand() returning: -2
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+emcTaskPlanClose() called at emc/task/emctask.cc:216
+USRMOT: ERROR: command timeout
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+Outgoing motion id is 6.
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +29,    +1,)
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+USRMOT: ERROR: command timeout
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=6
+USRMOT: ERROR: command timeout
+can't do that (EMC_TRAJ_SET_TELEOP_ENABLE) in auto mode with the interpreter idle
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Motion id 3 took 0.651021 seconds (current 0)
+Motion id 0 took 0.000001 seconds (current 0).
+waiting for s.axes
+waiting for s.axes
+waiting for s.axes
+waiting for s.axes
+Shutting down and cleaning up Machinekit...
+Cleanup done

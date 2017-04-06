@@ -1,0 +1,2 @@
+sudo sed '/MUKUL/!d' /var/log/linuxcnc.log | sed 's/.*MUKUL.*#011 //' > /media/sf_File_Transfers/$(date -d "today" +"%Y%m%d%H%M")_trajectory.dat
+
