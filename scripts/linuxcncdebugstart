@@ -1,0 +1,9 @@
+sudo rm /var/log/linuxcnc.log
+
+sudo touch  /var/log/linuxcnc.log
+sudo chmod 644 /var/log/linuxcnc.log
+sudo service rsyslog restart
+
+logger -p local1.notice testing logging
+
+

@@ -385,6 +385,7 @@ CFLAGS := $(INCLUDE) $(OPT) $(DEBUG) $(PROFILE_CFLAGS) -DULAPI $(call cc-option,
 
 # enable runtime comparison of GIT_CONFIG_SHA (config.h) and GIT_BUILD_SHA
 CFLAGS += -DGIT_BUILD_SHA=\"'$(GIT_BUILD_SHA)'\"
+CFLAGS += -DTC_DEBUG
 
 # make ck_pr.h happy:
 CFLAGS += $(CK_CFLAGS)
