@@ -2253,7 +2253,7 @@ static int emcTaskIssueCommand(NMLmsg * cmd)
 
     case EMC_TASK_PLAN_RUN_TYPE:
         if (!all_homed() && !no_force_homing) { //!no_force_homing = force homing before Auto
-            emcOperatorError(0, _("Can't run a program when not homed"));
+            emcOperatorError(0, _("Roby, you can't run a program when not homed"));
             retval = -1;
             break;
         }
