@@ -26,6 +26,13 @@
 #include "config.h"
 #include "motion_types.h"
 
+// Logging
+#include <syslog_async.h>
+
+//extern int fOut;
+float log_joint_vel[9] = {0};
+float log_joint_pos[9] = {0};
+
 // Mark strings for translation, but defer translation to userspace
 #define _(s) (s)
 
@@ -2036,6 +2043,7 @@ static void output_to_hal(void)
     if(GET_MOTION_COORD_FLAG()) {
         *(emcmot_hal_data->current_vel) = emcmotStatus->current_vel;
         *(emcmot_hal_data->requested_vel) = emcmotStatus->requested_vel;
+
     } else if(GET_MOTION_TELEOP_FLAG()) {
         PmCartesian t = emcmotDebug->teleop_data.currentVel.tran;
         *(emcmot_hal_data->requested_vel) = 0.0;
@@ -2101,14 +2109,19 @@ static void output_to_hal(void)
 	/* write to HAL pins */
         *(joint_data->motor_offset) = joint->motor_offset;
 	*(joint_data->motor_pos_cmd) = joint->motor_pos_cmd;
+	//*(joint_data->motor_pos_cmd) = 1;
 	*(joint_data->joint_pos_cmd) = joint->pos_cmd;
+	//*(joint_data->joint_pos_cmd) = 1;
 	*(joint_data->joint_pos_fb) = joint->pos_fb;
+	//*(joint_data->joint_pos_fb) = 1;
 	*(joint_data->amp_enable) = GET_JOINT_ENABLE_FLAG(joint);
 	*(joint_data->index_enable) = joint->index_enable;
 	*(joint_data->homing) = GET_JOINT_HOMING_FLAG(joint);
 
 	*(joint_data->coarse_pos_cmd) = joint->coarse_pos;
+	//*(joint_data->coarse_pos_cmd) = 1;
 	*(joint_data->joint_vel_cmd) = joint->vel_cmd;
+	//*(joint_data->joint_vel_cmd) = 1;
 	*(joint_data->backlash_corr) = joint->backlash_corr;
 	*(joint_data->backlash_filt) = joint->backlash_filt;
 	*(joint_data->backlash_vel) = joint->backlash_vel;
@@ -2130,6 +2143,15 @@ static void output_to_hal(void)
 	*(joint_data->f_errored) = GET_JOINT_FERROR_FLAG(joint);
 	*(joint_data->faulted) = GET_JOINT_FAULT_FLAG(joint);
 	*(joint_data->home_state) = joint->home_state;
+
+    // ADDED BY MUKUL 4/20
+	if (joint_num < 9) {
+	  log_joint_vel[joint_num] = *joint_data->joint_vel_cmd;
+	  log_joint_pos[joint_num] = *joint_data->joint_pos_cmd;
+	}
+    } // while joint end
+    if (GET_MOTION_COORD_FLAG()) {
+	  syslog_async(LOG_ERR, "*MUKUL JOINT* %f %f %f %f", log_joint_pos[0], log_joint_vel[0], log_joint_pos[1], log_joint_vel[1]);
     }
 }
 
