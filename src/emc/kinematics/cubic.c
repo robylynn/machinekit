@@ -64,6 +64,7 @@ static double interpolateCubic(CUBIC_COEFF coeff, double t)
 {
     return coeff.a * (t * t * t) + coeff.b * (t * t) + coeff.c * t +
 	coeff.d;
+	//+5*sin(2*3.14*t/20);
 }
 
 /*
@@ -72,7 +73,7 @@ static double interpolateCubic(CUBIC_COEFF coeff, double t)
 */
 static double interpolateVel(CUBIC_COEFF coeff, double t)
 {
-    return 3.0 * coeff.a * (t * t) + 2.0 * coeff.b * t + coeff.c;
+    return 3.0 * coeff.a * (t * t) + 2.0 * coeff.b * t + coeff.c;//+2*3.14/20*1*cos(2*3.14*t/20);
 }
 
 /*
@@ -81,7 +82,7 @@ static double interpolateVel(CUBIC_COEFF coeff, double t)
 */
 static double interpolateAccel(CUBIC_COEFF coeff, double t)
 {
-    return 6.0 * coeff.a * t + 2.0 * coeff.b;
+    return 6.0 * coeff.a * t + 2.0 * coeff.b;//-(2*3.14/20*2*3.14/20)*1*sin(2*3.14/20*t);
 }
 
 /*
@@ -90,7 +91,7 @@ static double interpolateAccel(CUBIC_COEFF coeff, double t)
 */
 static double interpolateJerk(CUBIC_COEFF coeff, double t)
 {
-    return 6.0 * coeff.a;
+    return 6.0 * coeff.a;//-(2*3.14/20*2*3.14/20*2*3.14/20)*1*cos(2*3.14/20*t);
 }
 
 /*

@@ -1,17 +1,17 @@
 /********************************************************************
-* Description: control.c
-*   emcmotController() is the main loop running at the servo cycle
-*   rate. All state logic and trajectory calcs are called from here.
-*
-*   Derived from a work by Fred Proctor & Will Shackleford
-*
-* Author:
-* License: GPL Version 2
-* Created on:
-* System: Linux
-*
-* Copyright (c) 2004 All rights reserved.
-********************************************************************/
+ * Description: control.c
+ *   emcmotController() is the main loop running at the servo cycle
+ *   rate. All state logic and trajectory calcs are called from here.
+ *
+ *   Derived from a work by Fred Proctor & Will Shackleford
+ *
+ * Author:
+ * License: GPL Version 2
+ * Created on:
+ * System: Linux
+ *
+ * Copyright (c) 2004 All rights reserved.
+ ********************************************************************/
 
 #include "posemath.h"
 #include "rtapi.h"
@@ -25,13 +25,29 @@
 #include "motion_debug.h"
 #include "config.h"
 #include "motion_types.h"
+#include "stdlib.h"
+
+//ROBY: used for shared memory
+//#include <sys/types.h>
+//#include <sys/ipc.h>
+//#include <sys/shm.h>
 
 // Logging
 #include <syslog_async.h>
 
 //extern int fOut;
-float log_joint_vel[9] = {0};
-float log_joint_pos[9] = {0};
+float log_joint_vel[9] = { 0 };
+float log_joint_pos[9] = { 0 };
+float ext_vel_cmds = 0.1;
+
+//float xcoords[] = {2, 1.99999732826806, 1.99995725243176, 1.99978359356761, 1.99931607545460, 1.99833039951598, 1.99653843363564, 1.99358859862610, 1.98906655977021, 1.98249635407574, 1.97334210634596, 1.96101050841705, 1.94485425532351, 1.92417664892593, 1.89823759267886, 1.86626120953176, 1.82744531704080, 1.78097298801931, 1.72602640968887, 1.66180322738477, 1.58753551840375, 1.50251148552968, 1.40609988619523, 1.29777712041090, 1.17715678717181, 1.04402138425660, 0.898355670161278, 0.740381030392282, 0.570589995789514, 0.389779851833651, 0.199084060708416, 0, -0.205588686652040, -0.415397018476539, -0.626732927893056, -0.836502970763123, -1.04123165917997, -1.23709651044576, -1.41998072285579, -1.58554507126928, -1.72932014454586, -1.84681940771651, -1.93367275480176, -1.98577922190511, -1.99947636327482, -1.97172247680448, -1.90028643626396, -1.78393839863042, -1.62263317760330, -1.41767669863122, -1.17186478405444, -0.889582681888306, -0.576853381683375, -0.241322993352357, 0.107827567160623, 0.460053520599268, 0.803705968225507, 1.12638285995559, 1.41536888675454, 1.65815638741381, 1.84303303776277, 1.95971532755543, 2};
+//float ycoords[] = {0, 0.00163454279639651, 0.00653812751505413, 0.0147103611257359, 0.0261497152413796, 0.0408522164953011, 0.0588096144685624, 0.0800070300474056, 0.104420090025677, 0.132011558278414, 0.162727480256177, 0.196492866205054, 0.233206949698146, 0.272738072025241, 0.314918259926596, 0.359537584195680, 0.406338409833985, 0.455009674607466, 0.505181361754510, 0.556419363756681, 0.608220966797129, 0.660011218815902, 0.711140476636253, 0.760883457853106, 0.808440149054856, 0.852938941134553, 0.893442372216737, 0.928955856033437, 0.958439755110477, 0.980825120383922, 0.995033358331751, 1, 0.994702630427894, 0.978192889598059, 0.949632275817145, 0.908331269403469, 0.853791050538909, 0.785746814158816, 0.704211393460436, 0.609517601668254, 0.502357402072440, 0.383815735503912, 0.255396592252802, 0.119038735134774, -0.0228816121881267, -0.167563774772468, -0.311813830735270, -0.452096170601995, -0.584607041298045, -0.705370962359183, -0.810359939763352, -0.895634223900082, -0.957501981204276, -0.992693710678105, -0.998545594322090, -0.973184303996964, -0.915704198504995, -0.826326456795114, -0.706528646695803, -0.559132675417650, -0.388339162883078, -0.199697167571488, 0};
+
+float xcoords[] = {0.01665,0.033293,0.049977,0.066659,0.083301,0.099984,0.11667,0.13331,0.14999,0.16667,0.18332,0.2,0.21668,0.23332,0.25001,0.26669,0.28333,0.30001,0.31669,0.33334,0.35002,0.3667,0.38335,0.40003,0.41671,0.43336,0.45004,0.46672,0.48337,0.50005,0.51673,0.53338,0.55006,0.56675,0.58339,0.60007,0.61676,0.6334,0.65008,0.66677,0.68341,0.70009,0.71677,0.73342,0.7501,0.76678,0.78343,0.80011,0.81679,0.83343,0.85012,0.8668,0.88344,0.90013,0.91681,0.93345,0.95013,0.96682,0.98346,1.0001,1.0168,1.0335,1.0501,1.0668,1.0835,1.1002,1.1168,1.1335,1.1502,1.1668,1.1835,1.2002,1.2168,1.2335,1.2502,1.2669,1.2835,1.3002,1.3169,1.3335,1.3502,1.3669,1.3835,1.4002,1.4169,1.4335,1.4502,1.4669,1.4835,1.5002,1.5169,1.5335,1.5502,1.5669,1.5835,1.6002,1.6169,1.6336,1.6502,1.6669,1.6836,1.7003,1.7169,1.7336,1.7503,1.767,1.7836,1.8003,1.817,1.8336,1.8503,1.867,1.8836,1.9003,1.917,1.9336,1.9503,1.967,1.9836,2.0003,2.017,2.0336,2.0503,2.067,2.0836,2.1003,2.117,2.1336,2.1503,2.167,2.1837,2.2003,2.217,2.2337,2.2503,2.267,2.2837,2.3004,2.317,2.3337,2.3504,2.367,2.3837,2.4004,2.417,2.4337,2.4504,2.4671,2.4837,2.5004,2.5171,2.5337,2.5504,2.5671,2.5837,2.6004,2.6171,2.6337,2.6504,2.6671,2.6837,2.7004,2.7171,2.7337,2.7504,2.7671,2.7838,2.8004,2.8171,2.8338,2.8504,2.8671,2.8838,2.9005,2.9171,2.9338,2.9505,2.9672,2.9838,3.0005,3.0172,3.0338,3.0505,3.0672,3.0838,3.1005,3.1172,3.1338,3.1505,3.1672,3.1838,3.2005,3.2172,3.2338,3.2505,3.2672,3.2838,3.3005,3.3172,3.3338,3.3505,3.3672,3.3838,3.4005,3.4172,3.4339,3.4505,3.4672,3.4839,3.5005,3.5172,3.5339,3.5506,3.5672,3.5839,3.6006,3.6172,3.6339,3.6506,3.6673,3.6839,3.7006,3.7173,3.7339,3.7506,3.7673,3.7839,3.8006,3.8173,3.8339,3.8506,3.8673,3.8839,3.9006,3.9173,3.9339,3.9506,3.9673,3.984,4.0006};
+float ycoords[] = {0.1636,0.32341,0.47434,0.6124,0.73341,0.8339,0.91107,0.96283,0.98768,0.98495,0.95466,0.89765,0.81545,0.71029,0.58512,0.44338,0.28899,0.12623,-0.040378,-0.2063,-0.36697,-0.51798,-0.65512,-0.77461,-0.87315,-0.94797,-0.9971,-1.0191,-1.0136,-0.98044,-0.9208,-0.83623,-0.72912,-0.60249,-0.45981,-0.30512,-0.14271,0.02292,0.18722,0.34557,0.49351,0.627,0.74229,0.83612,0.90592,0.94974,0.96632,0.95533,0.91684,0.85202,0.76264,0.65115,0.52059,0.37461,0.21726,0.052853,-0.11403,-0.27882,-0.43705,-0.58432,-0.71653,-0.83004,-0.92171,-0.98903,-1.0301,-1.0438,-1.0299,-0.98872,-0.92138,-0.82972,-0.7164,-0.58457,-0.43781,-0.28029,-0.11644,0.049241,0.21221,0.36789,0.51191,0.64029,0.7494,0.83624,0.89841,0.93417,0.9424,0.92308,0.87655,0.80414,0.70778,0.59018,0.45456,0.30474,0.14484,-0.020758,-0.18749,-0.35083,-0.50622,-0.64937,-0.77631,-0.88352,-0.9681,-1.0277,-1.0606,-1.066,-1.0438,-0.99461,-0.91973,-0.82129,-0.70203,-0.5653,-0.41491,-0.25501,-0.090064,0.075299,0.2365,0.38908,0.5288,0.65177,0.75449,0.83412,0.8885,0.91601,0.91597,0.88835,0.83388,0.75404,0.651,0.52761,0.38729,0.23398,0.071884,-0.094566,-0.26073,-0.4221,-0.57428,-0.71295,-0.8343,-0.935,-1.0123,-1.064,-1.0887,-1.0858,-1.0553,-0.99825,-0.91602,-0.81098,-0.68611,-0.54485,-0.39114,-0.22926,-0.063727,0.10089,0.26001,0.40917,0.54424,0.66144,0.75748,0.82976,0.87616,0.89536,0.88704,0.85125,0.78893,0.70177,0.59228,0.46347,0.31881,0.16238,-0.0014864,-0.16836,-0.33359,-0.4926,-0.6411,-0.77495,-0.89045,-0.9844,-1.0541,-1.0978,-1.1142,-1.103,-1.0645,-0.99961,-0.91022,-0.79889,-0.66869,-0.52322,-0.36659,-0.20313,-0.037393,0.12602,0.28257,0.42791,0.55797,0.66913,0.75828,0.82294,0.86129,0.87226,0.85561,0.81165,0.74163,0.64753,0.53188,0.39791,0.24929,0.090126,-0.075121,-0.24192,-0.40578,-0.56216,-0.70669,-0.83535,-0.94463,-1.0315,-1.0936,-1.1292,-1.1373,-1.1178,-1.0712,-0.99871,-0.90243,-0.78502,-0.64983,-0.5006,-0.34143,-0.17678,-0.011275,0.15056,0.3042,0.44536,0.57009,0.67489,0.7569,0.81381,0.84403,0.84661,0.82176,0.76995,0.69272,0.59711};
+
+int jj = 0;
+float tt = 0;
 
 // Mark strings for translation, but defer translation to userspace
 #define _(s) (s)
@@ -39,8 +55,8 @@ float log_joint_pos[9] = {0};
 extern int abort_and_switchback(void); // command.c
 
 /***********************************************************************
-*                  LOCAL VARIABLE DECLARATIONS                         *
-************************************************************************/
+ *                  LOCAL VARIABLE DECLARATIONS                         *
+ ************************************************************************/
 
 /*! \todo FIXME - this is a leftover global, it will eventually go away */
 int rehomeAll;
@@ -52,405 +68,399 @@ unsigned long last_period = 0;
 double servo_period;
 double servo_freq;
 
-
 /*! \todo FIXME - debugging - uncomment the following line to log changes in
-   JOINT_FLAG and MOTION_FLAG */
+ JOINT_FLAG and MOTION_FLAG */
 // #define WATCH_FLAGS 1
-
 // ignore jog moves during pause if feed too low
 #define MINIMUM_JOG_VELOCITY 0.1 // FIXME: questionable
 
-
 /* debugging function - it watches a particular variable and
-   prints a message when the value changes.  Right now there are
-   calls to this scattered throughout this and other files.
-   To disable them, comment out the following define:
-*/
+ prints a message when the value changes.  Right now there are
+ calls to this scattered throughout this and other files.
+ To disable them, comment out the following define:
+ */
 // #define ENABLE_CHECK_STUFF
-
 #ifdef ENABLE_CHECK_STUFF
 void check_stuff(const char *location)
 {
-   static char *target, old = 0xFF;
-/*! \todo Another #if 0 */
+	static char *target, old = 0xFF;
+	/*! \todo Another #if 0 */
 #if 0
-/* kludge to look at emcmotDebug->enabling and emcmotStatus->motionFlag
-   at the same time - we simply use a high bit of the flags to
-   hold "enabling" */
-   short tmp;
-   if ( emcmotDebug->enabling )
-     tmp = 0x1000;
-   else
-     tmp = 0x0;
-   tmp |= emcmotStatus->motionFlag;
-   target = &tmp;
-/* end of kluge */
+	/* kludge to look at emcmotDebug->enabling and emcmotStatus->motionFlag
+	 at the same time - we simply use a high bit of the flags to
+	 hold "enabling" */
+	short tmp;
+	if ( emcmotDebug->enabling )
+	tmp = 0x1000;
+	else
+	tmp = 0x0;
+	tmp |= emcmotStatus->motionFlag;
+	target = &tmp;
+	/* end of kluge */
 #endif
 
-    target = (emcmot_hal_data->enable);
-    if ( old != *target ) {
-	rtapi_print ( "%d: watch value %02X (%s)\n", emcmotStatus->heartbeat, *target, location );
-	old = *target;
-    }
+	target = (emcmot_hal_data->enable);
+	if ( old != *target ) {
+		rtapi_print ( "%d: watch value %02X (%s)\n", emcmotStatus->heartbeat, *target, location );
+		old = *target;
+	}
 }
 #else /* make it disappear */
-void check_stuff(const char *location)
-{
-/* do nothing (I wonder if gcc is smart
-   enough to optimize the calls away?) */
+void check_stuff(const char *location) {
+	/* do nothing (I wonder if gcc is smart
+	 enough to optimize the calls away?) */
 }
 #endif /* ENABLE_CHECK_STUFF */
 
-
 /***********************************************************************
-*                      LOCAL FUNCTION PROTOTYPES                       *
-************************************************************************/
+ *                      LOCAL FUNCTION PROTOTYPES                       *
+ ************************************************************************/
 
 /* the following functions are called (in this order) by the main
-   controller function.  They are an attempt to break the huge
-   function (originally 1600 lines) into something a little easier
-   to understand.
-*/
+ controller function.  They are an attempt to break the huge
+ function (originally 1600 lines) into something a little easier
+ to understand.
+ */
 
 /* 'process_inputs()' is responsible for reading hardware input
-   signals (from the HAL) and doing basic processing on them.  In
-   the case of position feedback, that means removing backlash or
-   screw error comp and calculating the following error.  For 
-   switches, it means debouncing them and setting flags in the
-   emcmotStatus structure.
-*/
+ signals (from the HAL) and doing basic processing on them.  In
+ the case of position feedback, that means removing backlash or
+ screw error comp and calculating the following error.  For
+ switches, it means debouncing them and setting flags in the
+ emcmotStatus structure.
+ */
 static void process_inputs(void);
 
 /* 'do forward kins()' takes the position feedback in joint coords
-   and applies the forward kinematics to it to generate feedback
-   in Cartesean coordinates.  It has code to handle machines that
-   don't have forward kins, and other special cases, such as when
-   the joints have not been homed.
-*/
+ and applies the forward kinematics to it to generate feedback
+ in Cartesean coordinates.  It has code to handle machines that
+ don't have forward kins, and other special cases, such as when
+ the joints have not been homed.
+ */
 static void do_forward_kins(void);
 
 /* probe inputs need to be handled after forward kins are run, since
-   cartesian feedback position is latched when the probe fires, and it
-   should be based on the feedback read in on this servo cycle.
-*/
+ cartesian feedback position is latched when the probe fires, and it
+ should be based on the feedback read in on this servo cycle.
+ */
 
 static void process_probe_inputs(void);
 
 /* 'check_for_faults()' is responsible for detecting fault conditions
-   such as limit switches, amp faults, following error, etc.  It only
-   checks active axes.  It is also responsible for generating an error
-   message.  (Later, once I understand the cmd/status/error interface
-   better, it will probably generate error codes that can be passed
-   up the architecture toward the GUI - printing error messages
-   directly seems a little messy)
-*/
+ such as limit switches, amp faults, following error, etc.  It only
+ checks active axes.  It is also responsible for generating an error
+ message.  (Later, once I understand the cmd/status/error interface
+ better, it will probably generate error codes that can be passed
+ up the architecture toward the GUI - printing error messages
+ directly seems a little messy)
+ */
 static void check_for_faults(void);
 
 /* 'set_operating_mode()' handles transitions between the operating
-   modes, which are free, coordinated, and teleop.  This stuff needs
-   to be better documented.  It is basically a state machine, with
-   a current state, a desired state, and rules determining when the
-   state can change.  It should be rewritten as such, but for now
-   it consists of code copied exactly from emc1.
-*/
+ modes, which are free, coordinated, and teleop.  This stuff needs
+ to be better documented.  It is basically a state machine, with
+ a current state, a desired state, and rules determining when the
+ state can change.  It should be rewritten as such, but for now
+ it consists of code copied exactly from emc1.
+ */
 static void set_operating_mode(void);
 
 /* 'handle_jogwheels()' reads jogwheels, decides if they should be
-   enabled, and if so, changes the free mode planner's target position
-   when the jogwheel(s) turn.
-*/
+ enabled, and if so, changes the free mode planner's target position
+ when the jogwheel(s) turn.
+ */
 static void handle_jogwheels(void);
 
 /* 'do_homing_sequence()' looks at emcmotStatus->homingSequenceState 
-   to decide what, if anything, needs to be done related to multi-joint
-   homing.
+ to decide what, if anything, needs to be done related to multi-joint
+ homing.
 
-   no prototype here, implemented in homing.c, proto in mot_priv.h
+ no prototype here, implemented in homing.c, proto in mot_priv.h
  */
 
 /* 'do_homing()' looks at the home_state field of each joint struct
-    to decide what, if anything, needs to be done related to homing
-    the joint.  Homing is implemented as a state machine, the exact
-    sequence of states depends on the machine configuration.  It
-    can be as simple as immediately setting the current position to
-    zero, or a it can be a multi-step process (find switch, set
-    approximate zero, back off switch, find index, set final zero,
-    rapid to home position), or anywhere in between.
+ to decide what, if anything, needs to be done related to homing
+ the joint.  Homing is implemented as a state machine, the exact
+ sequence of states depends on the machine configuration.  It
+ can be as simple as immediately setting the current position to
+ zero, or a it can be a multi-step process (find switch, set
+ approximate zero, back off switch, find index, set final zero,
+ rapid to home position), or anywhere in between.
 
-   no prototype here, implemented in homing.c, proto in mot_priv.h
-*/
+ no prototype here, implemented in homing.c, proto in mot_priv.h
+ */
 
 /* 'get_pos_cmds()' generates the position setpoints.  This includes
-   calling the trajectory planner and interpolating its outputs.
-*/
+ calling the trajectory planner and interpolating its outputs.
+ */
 
 static void get_pos_cmds(long period);
 
 /* 'compute_screw_comp()' is responsible for calculating backlash and
-   lead screw error compensation.  (Leadscrew error compensation is
-   a more sophisticated version that includes backlash comp.)  It uses
-   the velocity in emcmotStatus->joint_vel_cmd to determine which way
-   each joint is moving, and the position in emcmotStatus->joint_pos_cmd
-   to determine where the joint is at.  That information is used to
-   create the compensation value that is added to the joint_pos_cmd
-   to create motor_pos_cmd, and is subtracted from motor_pos_fb to
-   get joint_pos_fb.  (This function does not add or subtract the
-   compensation value, it only computes it.)  The basic compensation
-   value is in backlash_corr, however has makes step changes when
-   the direction reverses.  backlash_filt is a ramped version, and
-   that is the one that is later added/subtracted from the position.
-*/
+ lead screw error compensation.  (Leadscrew error compensation is
+ a more sophisticated version that includes backlash comp.)  It uses
+ the velocity in emcmotStatus->joint_vel_cmd to determine which way
+ each joint is moving, and the position in emcmotStatus->joint_pos_cmd
+ to determine where the joint is at.  That information is used to
+ create the compensation value that is added to the joint_pos_cmd
+ to create motor_pos_cmd, and is subtracted from motor_pos_fb to
+ get joint_pos_fb.  (This function does not add or subtract the
+ compensation value, it only computes it.)  The basic compensation
+ value is in backlash_corr, however has makes step changes when
+ the direction reverses.  backlash_filt is a ramped version, and
+ that is the one that is later added/subtracted from the position.
+ */
 static void compute_screw_comp(void);
 
 /* 'output_to_hal()' writes the handles the final stages of the
-   control function.  It applies screw comp and writes the
-   final motor position to the HAL (which routes it to the PID
-   loop).  It also drives other HAL outputs, and it writes a
-   number of internal variables to HAL parameters so they can
-   be observed with halscope and halmeter.
-*/
+ control function.  It applies screw comp and writes the
+ final motor position to the HAL (which routes it to the PID
+ loop).  It also drives other HAL outputs, and it writes a
+ number of internal variables to HAL parameters so they can
+ be observed with halscope and halmeter.
+ */
 static void output_to_hal(void);
 
 /* 'update_status()' copies assorted status information to shared
-   memory (the emcmotStatus structure) so that it is available to
-   higher level code.
-*/
+ memory (the emcmotStatus structure) so that it is available to
+ higher level code.
+ */
 static void update_status(void);
 
-
 /***********************************************************************
-*                        PUBLIC FUNCTION CODE                          *
-************************************************************************/
+ *                        PUBLIC FUNCTION CODE                          *
+ ************************************************************************/
 
 /*
-  emcmotController() runs the trajectory and interpolation calculations
-  each control cycle
+ emcmotController() runs the trajectory and interpolation calculations
+ each control cycle
 
-  This function gets called at regular intervals - therefore it does NOT
-  have a loop within it!
+ This function gets called at regular intervals - therefore it does NOT
+ have a loop within it!
 
-  Inactive axes are still calculated, but the PIDs are inhibited and
-  the amp enable/disable are inhibited
-  */
+ Inactive axes are still calculated, but the PIDs are inhibited and
+ the amp enable/disable are inhibited
+ */
 
-extern int emcmotController(void *arg,  const hal_funct_args_t *fa)
-{
-    long period = fa_period(fa);
+extern int emcmotController(void *arg, const hal_funct_args_t *fa) {
+	long period = fa_period(fa);
 
-    // - overrun detection -
-    // maintain some records of how long it's been between calls.  The
-    // first time we see a delay that's much longer than the records show
-    // is normal, report an error.  This might detect bogus realtime 
-    // performance caused by ACPI, onboard video, etc.  It can be reliably
-    // triggered by maximizing glxgears on my nvidia system, which also
-    // causes the rtai latency test to show overruns.
+	// - overrun detection -
+	// maintain some records of how long it's been between calls.  The
+	// first time we see a delay that's much longer than the records show
+	// is normal, report an error.  This might detect bogus realtime
+	// performance caused by ACPI, onboard video, etc.  It can be reliably
+	// triggered by maximizing glxgears on my nvidia system, which also
+	// causes the rtai latency test to show overruns.
 
-    // check below if you set this under 5
+	// check below if you set this under 5
 #define CYCLE_HISTORY 5
 
+	static long long int last = 0;
+	static int index = 0;
+	static long int cycles[CYCLE_HISTORY];
+	static int priming = 1;
 
-    static long long int last = 0;
-    static int index = 0;
-    static long int cycles[CYCLE_HISTORY];
-    static int priming = 1;
-
-    long long int now = fa_start_time(fa);
-    long int this_run = (long int)(now - last);
-    emcmot_hal_data->last_period = this_run;
+	long long int now = fa_start_time(fa);
+	long int this_run = (long int) (now - last);
+	emcmot_hal_data->last_period = this_run;
 #ifdef HAVE_CPU_KHZ
-    emcmot_hal_data->last_period_ns = this_run * 1e6 / cpu_khz;
+	emcmot_hal_data->last_period_ns = this_run * 1e6 / cpu_khz;
 #endif
 
-    if(!priming && (rtapi_switch->thread_flavor_id != RTAPI_POSIX_ID)) {
-        // we have CYCLE_HISTORY samples, so check for this call being 
-        // anomolously late
-        int i;
+	if (!priming && (rtapi_switch->thread_flavor_id != RTAPI_POSIX_ID)) {
+		// we have CYCLE_HISTORY samples, so check for this call being
+		// anomolously late
+		int i;
 
-        for(i=0; i<CYCLE_HISTORY; i++) {
-            if (this_run > 1.2 * cycles[i]) {
-                emcmot_hal_data->overruns++;
-                // print message on first overrun only
-                if(emcmot_hal_data->overruns == 1) {
-                    int saved_level = rtapi_get_msg_level();
-                    rtapi_set_msg_level(RTAPI_MSG_ALL);
-                    reportError(_("Unexpected realtime delay: check dmesg for details."));
-                    rtapi_print_msg(RTAPI_MSG_WARN,
-                        _("\nIn recent history there were\n"
-                        "%ld, %ld, %ld, %ld, and %ld\n"
-                        "elapsed clocks between calls to the motion controller.\n"),
-                        cycles[0], cycles[1], cycles[2], cycles[3], cycles[4]);
-                    rtapi_print_msg(RTAPI_MSG_WARN,
-                        _("This time, there were %ld which is so anomalously\n"
-                        "large that it probably signifies a problem with your\n"
-                        "realtime configuration.  For the rest of this run of\n"
-                        "EMC, this message will be suppressed.\n\n"),
-                        this_run);
-                    rtapi_set_msg_level(saved_level);
-                }
+		for (i = 0; i < CYCLE_HISTORY; i++) {
+			if (this_run > 1.2 * cycles[i]) {
+				emcmot_hal_data->overruns++;
+				// print message on first overrun only
+				if (emcmot_hal_data->overruns == 1) {
+					int saved_level = rtapi_get_msg_level();
+					rtapi_set_msg_level(RTAPI_MSG_ALL);
+					reportError(
+							_("Unexpected realtime delay: check dmesg for details."));
+					rtapi_print_msg(RTAPI_MSG_WARN,
+							_("\nIn recent history there were\n"
+									"%ld, %ld, %ld, %ld, and %ld\n"
+									"elapsed clocks between calls to the motion controller.\n"),
+							cycles[0], cycles[1], cycles[2], cycles[3],
+							cycles[4]);
+					rtapi_print_msg(RTAPI_MSG_WARN,
+							_("This time, there were %ld which is so anomalously\n"
+									"large that it probably signifies a problem with your\n"
+									"realtime configuration.  For the rest of this run of\n"
+									"EMC, this message will be suppressed.\n\n"),
+							this_run);
+					rtapi_set_msg_level(saved_level);
+				}
 
-		break;
-	    }
-        }
-	if(last) {
-	    cycles[index++] = this_run;
+				break;
+			}
+		}
+		if (last) {
+			cycles[index++] = this_run;
+		}
+		if (index == CYCLE_HISTORY) {
+			// wrap around to the start of the array
+			index = 0;
+			// we now have CYCLE_HISTORY good samples, so start checking times
+			priming = 0;
+		}
 	}
-	if(index == CYCLE_HISTORY) {
-	    // wrap around to the start of the array
-	    index = 0;
-	    // we now have CYCLE_HISTORY good samples, so start checking times
-	    priming = 0;
+	// we need this for next time
+	last = now;
+
+	// end of overrun detection
+
+	/* calculate servo period as a double - period is in integer nsec */
+	servo_period = period * 0.000000001;
+
+	if (period != last_period) {
+		emcmotSetCycleTime(period);
+		last_period = period;
 	}
-    }
-    // we need this for next time
-    last = now;
 
-    // end of overrun detection
+	/* calculate servo frequency for calcs like vel = Dpos / period */
+	/* it's faster to do vel = Dpos * freq */
+	servo_freq = 1.0 / servo_period;
+	/* increment head count to indicate work in progress */
+	emcmotStatus->head++;
+	/* here begins the core of the controller */
 
-    /* calculate servo period as a double - period is in integer nsec */
-    servo_period = period * 0.000000001;
+	check_stuff("before process_inputs()");
+	process_inputs();
+	check_stuff("after process_inputs()");
+	do_forward_kins();
+	check_stuff("after do_forward_kins()");
+	process_probe_inputs();
+	check_stuff("after process_probe_inputs()");
+	check_for_faults();
+	check_stuff("after check_for_faults()");
+	set_operating_mode();
+	check_stuff("after set_operating_mode()");
+	handle_jogwheels();
+	check_stuff("after handle_jogwheels()");
+	do_homing_sequence();
+	check_stuff("after do_homing_sequence()");
+	do_homing();
+	check_stuff("after do_homing()");
+	get_pos_cmds(period);
+	check_stuff("after get_pos_cmds()");
+	compute_screw_comp();
+	check_stuff("after compute_screw_comp()");
+	output_to_hal();
+	check_stuff("after output_to_hal()");
+	update_status();
+	check_stuff("after update_status()");
+	/* here ends the core of the controller */
+	emcmotStatus->heartbeat++;
+	/* set tail to head, to indicate work complete */
+	emcmotStatus->tail = emcmotStatus->head;
+	/* clear init flag */
+	first_pass = 0;
 
-    if(period != last_period) {
-        emcmotSetCycleTime(period);
-        last_period = period;
-    }
-
-    /* calculate servo frequency for calcs like vel = Dpos / period */
-    /* it's faster to do vel = Dpos * freq */
-    servo_freq = 1.0 / servo_period;
-    /* increment head count to indicate work in progress */
-    emcmotStatus->head++;
-    /* here begins the core of the controller */
-
-check_stuff ( "before process_inputs()" );
-    process_inputs();
-check_stuff ( "after process_inputs()" );
-    do_forward_kins();
-check_stuff ( "after do_forward_kins()" );
-    process_probe_inputs();
-check_stuff ( "after process_probe_inputs()" );
-    check_for_faults();
-check_stuff ( "after check_for_faults()" );
-    set_operating_mode();
-check_stuff ( "after set_operating_mode()" );
-    handle_jogwheels();
-check_stuff ( "after handle_jogwheels()" );
-    do_homing_sequence();
-check_stuff ( "after do_homing_sequence()" );
-    do_homing();
-check_stuff ( "after do_homing()" );
-    get_pos_cmds(period);
-check_stuff ( "after get_pos_cmds()" );
-    compute_screw_comp();
-check_stuff ( "after compute_screw_comp()" );
-    output_to_hal();
-check_stuff ( "after output_to_hal()" );
-    update_status();
-check_stuff ( "after update_status()" );
-    /* here ends the core of the controller */
-    emcmotStatus->heartbeat++;
-    /* set tail to head, to indicate work complete */
-    emcmotStatus->tail = emcmotStatus->head;
-    /* clear init flag */
-    first_pass = 0;
-
-/* end of controller function */
-    return 0;
+	/* end of controller function */
+	return 0;
 }
 
 /***********************************************************************
-*                         LOCAL FUNCTION CODE                          *
-************************************************************************/
+ *                         LOCAL FUNCTION CODE                          *
+ ************************************************************************/
 
 /* The protoypes and documentation for these functions are located
-   at the top of the file in the section called "local function
-   prototypes"
-*/
+ at the top of the file in the section called "local function
+ prototypes"
+ */
 
 static void process_probe_inputs(void) {
-    static int old_probeVal = 0;
-    unsigned char probe_type = emcmotStatus->probe_type;
+	static int old_probeVal = 0;
+	unsigned char probe_type = emcmotStatus->probe_type;
 
-    // don't error
-    char probe_suppress = probe_type & 1;
+	// don't error
+	char probe_suppress = probe_type & 1;
 
-    // trigger when the probe clears, instead of the usual case of triggering when it trips
-    char probe_whenclears = !!(probe_type & 2);
-    
-    /* read probe input */
-    emcmotStatus->probeVal = !!*(emcmot_hal_data->probe_input);
-    if (emcmotStatus->probing) {
-        /* check if the probe has been tripped */
-        if (emcmotStatus->probeVal ^ probe_whenclears) {
-            /* remember the current position */
-            emcmotStatus->probedPos = emcmotStatus->carte_pos_fb; 
-            /* stop! */
-            emcmotStatus->probing = 0;
-            emcmotStatus->probeTripped = 1;
-            abort_and_switchback(); // tpAbort(emcmotQueue);
-        /* check if the probe hasn't tripped, but the move finished */
-        } else if (GET_MOTION_INPOS_FLAG() &&
-		   emcmotConfig->vtp->tpQueueDepth(emcmotQueue) == 0) {
-            /* we are already stopped, but we need to remember the current 
-               position here, because it will still be queried */
-            emcmotStatus->probedPos = emcmotStatus->carte_pos_fb;
-            emcmotStatus->probing = 0;
-            if (probe_suppress) {
-                emcmotStatus->probeTripped = 0;
-            } else if(probe_whenclears) {
-                reportError(_("G38.4 move finished without breaking contact."));
-                SET_MOTION_ERROR_FLAG(1);
-            } else {
-                reportError(_("G38.2 move finished without making contact."));
-                SET_MOTION_ERROR_FLAG(1);
-            }
-        }
-    } else if (!old_probeVal && emcmotStatus->probeVal) {
-        // not probing, but we have a rising edge on the probe.
-        // this could be expensive if we don't stop.
-        int i;
-        int aborted = 0;
+	// trigger when the probe clears, instead of the usual case of triggering when it trips
+	char probe_whenclears = !!(probe_type & 2);
 
-        if(!GET_MOTION_INPOS_FLAG() &&
-	   emcmotConfig->vtp->tpQueueDepth(emcmotQueue) &&
-           emcmotConfig->vtp->tpGetExecId(emcmotQueue) <= 0) {
-            // running an MDI command
-            abort_and_switchback(); // tpAbort(emcmotQueue);
-            reportError(_("Probe tripped during non-probe MDI command."));
-	    SET_MOTION_ERROR_FLAG(1);
-        }
+	/* read probe input */
+	emcmotStatus->probeVal = !!*(emcmot_hal_data->probe_input);
+	if (emcmotStatus->probing) {
+		/* check if the probe has been tripped */
+		if (emcmotStatus->probeVal ^ probe_whenclears) {
+			/* remember the current position */
+			emcmotStatus->probedPos = emcmotStatus->carte_pos_fb;
+			/* stop! */
+			emcmotStatus->probing = 0;
+			emcmotStatus->probeTripped = 1;
+			abort_and_switchback(); // tpAbort(emcmotQueue);
+			/* check if the probe hasn't tripped, but the move finished */
+		} else if (GET_MOTION_INPOS_FLAG()
+				&& emcmotConfig->vtp->tpQueueDepth(emcmotQueue) == 0) {
+			/* we are already stopped, but we need to remember the current
+			 position here, because it will still be queried */
+			emcmotStatus->probedPos = emcmotStatus->carte_pos_fb;
+			emcmotStatus->probing = 0;
+			if (probe_suppress) {
+				emcmotStatus->probeTripped = 0;
+			} else if (probe_whenclears) {
+				reportError(_("G38.4 move finished without breaking contact."));
+				SET_MOTION_ERROR_FLAG(1);
+			} else {
+				reportError(_("G38.2 move finished without making contact."));
+				SET_MOTION_ERROR_FLAG(1);
+			}
+		}
+	} else if (!old_probeVal && emcmotStatus->probeVal) {
+		// not probing, but we have a rising edge on the probe.
+		// this could be expensive if we don't stop.
+		int i;
+		int aborted = 0;
 
-        for(i=0; i<num_joints; i++) {
-            emcmot_joint_t *joint = &joints[i];
+		if (!GET_MOTION_INPOS_FLAG()
+				&& emcmotConfig->vtp->tpQueueDepth(emcmotQueue)
+				&& emcmotConfig->vtp->tpGetExecId(emcmotQueue) <= 0) {
+			// running an MDI command
+			abort_and_switchback(); // tpAbort(emcmotQueue);
+			reportError(_("Probe tripped during non-probe MDI command."));
+			SET_MOTION_ERROR_FLAG(1);
+		}
 
-            if (!GET_JOINT_ACTIVE_FLAG(joint)) {
-                /* if joint is not active, skip it */
-                continue;
-            }
+		for (i = 0; i < num_joints; i++) {
+			emcmot_joint_t *joint = &joints[i];
 
-            // abort any homing
-            if(GET_JOINT_HOMING_FLAG(joint)) {
-                joint->home_state = HOME_ABORT;
-                aborted=1;
-            }
+			if (!GET_JOINT_ACTIVE_FLAG(joint)) {
+				/* if joint is not active, skip it */
+				continue;
+			}
 
-            // abort any jogs
-            if(joint->free_tp_enable == 1) {
-                joint->free_tp_enable = 0;
-                // since homing uses free_tp, this protection of aborted
-                // is needed so the user gets the correct error.
-                if(!aborted) aborted=2;
-            }
-        }
+			// abort any homing
+			if (GET_JOINT_HOMING_FLAG(joint)) {
+				joint->home_state = HOME_ABORT;
+				aborted = 1;
+			}
 
-        if(aborted == 1) {
-            reportError(_("Probe tripped during homing motion."));
-        }
+			// abort any jogs
+			if (joint->free_tp_enable == 1) {
+				joint->free_tp_enable = 0;
+				// since homing uses free_tp, this protection of aborted
+				// is needed so the user gets the correct error.
+				if (!aborted)
+					aborted = 2;
+			}
+		}
 
-        if(aborted == 2) {
-            reportError(_("Probe tripped during a jog."));
-        }
-    }
-    old_probeVal = emcmotStatus->probeVal;
+		if (aborted == 1) {
+			reportError(_("Probe tripped during homing motion."));
+		}
+
+		if (aborted == 2) {
+			reportError(_("Probe tripped during a jog."));
+		}
+	}
+	old_probeVal = emcmotStatus->probeVal;
 }
 
 #define EQUAL_EMC_POSE(p1,p2) \
@@ -466,1783 +476,1874 @@ static void process_probe_inputs(void) {
 
 extern int inRange(EmcPose pos, int id, char *move_type); // from command.c
 
-static void update_offset_pose(void)
-{
-    EmcPose *nt = &emcmotStatus->pause_offset_carte_pos;
-    EmcPose *ipp = &emcmotStatus->pause_carte_pos;
+static void update_offset_pose(void) {
+	EmcPose *nt = &emcmotStatus->pause_offset_carte_pos;
+	EmcPose *ipp = &emcmotStatus->pause_carte_pos;
 
-    nt->tran.x = *emcmot_hal_data->pause_offset_x + ipp->tran.x;
-    nt->tran.y = *emcmot_hal_data->pause_offset_y + ipp->tran.y;
-    nt->tran.z = *emcmot_hal_data->pause_offset_z + ipp->tran.z;
-    nt->a = *emcmot_hal_data->pause_offset_a + ipp->a;
-    nt->b = *emcmot_hal_data->pause_offset_b + ipp->b;
-    nt->c = *emcmot_hal_data->pause_offset_c + ipp->c;
-    nt->u = *emcmot_hal_data->pause_offset_u + ipp->u;
-    nt->v = *emcmot_hal_data->pause_offset_v + ipp->v;
-    nt->w = *emcmot_hal_data->pause_offset_w + ipp->w;
+	nt->tran.x = *emcmot_hal_data->pause_offset_x + ipp->tran.x;
+	nt->tran.y = *emcmot_hal_data->pause_offset_y + ipp->tran.y;
+	nt->tran.z = *emcmot_hal_data->pause_offset_z + ipp->tran.z;
+	nt->a = *emcmot_hal_data->pause_offset_a + ipp->a;
+	nt->b = *emcmot_hal_data->pause_offset_b + ipp->b;
+	nt->c = *emcmot_hal_data->pause_offset_c + ipp->c;
+	nt->u = *emcmot_hal_data->pause_offset_u + ipp->u;
+	nt->v = *emcmot_hal_data->pause_offset_v + ipp->v;
+	nt->w = *emcmot_hal_data->pause_offset_w + ipp->w;
 }
 
-static void process_inputs(void)
-{
-    int joint_num;
-    double abs_ferror, tmp, scale;
-    joint_hal_t *joint_data;
-    emcmot_joint_t *joint;
-    unsigned char enables;
-    /* read spindle angle (for threading, etc) */
-    emcmotStatus->spindleRevs = *emcmot_hal_data->spindle_revs;
-    emcmotStatus->spindleSpeedIn = *emcmot_hal_data->spindle_speed_in;
-    emcmotStatus->spindle_is_atspeed = *emcmot_hal_data->spindle_is_atspeed;
-    /* compute net feed and spindle scale factors */
-    if ( emcmotStatus->motion_state == EMCMOT_MOTION_COORD ) {
-	/* use the enables that were queued with the current move */
-	enables = emcmotStatus->enables_queued;
-    } else {
-	/* use the enables that are in effect right now */
-	enables = emcmotStatus->enables_new;
-    }
-    /* feed scaling first:  feed_scale, adaptive_feed, and feed_hold */
-    scale = 1.0;
-    if ( enables & FS_ENABLED ) {
-        if (emcmotStatus->motionType == EMC_MOTION_TYPE_TRAVERSE) {
-            scale *= emcmotStatus->rapid_scale;
-        } else {
-            scale *= emcmotStatus->feed_scale;
-        }
-    }
-    if ( enables & AF_ENABLED ) {
-	/* read and clamp (0.0 to 1.0) adaptive feed HAL pin */
-	tmp = *emcmot_hal_data->adaptive_feed;
-	if ( tmp > 1.0 ) {
-	    tmp = 1.0;
-	} else if ( tmp < 0.0 ) {
-	    tmp = 0.0;
-	}
-	scale *= tmp;
-    }
-    if ( enables & FH_ENABLED ) {
-	/* read feed hold HAL pin */
-	if ( *emcmot_hal_data->feed_hold ) {
-	    scale = 0;
-	}
-    }
-    /*non maskable (except during spinndle synch move) feed hold inhibit pin */
-	if ( enables & *emcmot_hal_data->feed_inhibit ) {
-	    scale = 0;
-	}
-
-
-    // pause FSM
-    switch (*emcmot_hal_data->pause_state) {
-
-    case PS_RUNNING: // nothing to do.
-	break;
-
-    case PS_PAUSING_FOR_STEP:
-	rtapi_print_msg(RTAPI_MSG_DBG, "paused for step\n");
-	emcmotConfig->vtp->tpPause(emcmotQueue);
-	*emcmot_hal_data->pause_state = PS_PAUSING;;
-	break;
-
-    case PS_PAUSING:
-	// waiting for tp to actually stop since a spindle-sync motion might be in progress
-	if (emcmotConfig->vtp->tpIsPaused(emcmotQueue)) {
-	    rtapi_print_msg(RTAPI_MSG_DBG, "stopped\n");
-
-	    // switch to alternate motion queue:
-
-	    // record type of paused motion
-	    *emcmot_hal_data->paused_at_motion_type =
-		emcmotConfig->vtp->tpGetMotionType(emcmotQueue);
-
-	    // record current carte pos for return move
-	    emcmotConfig->vtp->tpGetPos(emcmotQueue, &emcmotStatus->pause_carte_pos);
-
-	    // clone parameters from primary queue
-	    emcmotConfig->vtp->tpSnapshot(emcmotPrimQueue, emcmotAltQueue);
-
-	    // side effect: this also clears emcmotStatus fields
-	    // current_vel, requested_vel, spindleSync, distance_to_go
-	    emcmotConfig->vtp->tpClear(emcmotAltQueue);
-
-	    // start alternate queue where we left off the primary queue
-	    emcmotConfig->vtp->tpSetPos(emcmotAltQueue,  &emcmotStatus->pause_carte_pos);
-
-	    // switch to alternate motion queue
-	    emcmotQueue = emcmotAltQueue;
-
-	    // at this point, ready to run motions on alternate queue
-	    *emcmot_hal_data->pause_state = PS_PAUSED;
-	}
-	break;
-
-    case PS_PAUSED:
-	// on alternate queue, all motion stopped
-	// position is the initial pause position, so ok to resume
-	if (emcmotStatus->resuming) {
-	    // a resume was signalled.
-	    // switch to primary queue and resume.
-	    rtapi_print_msg(RTAPI_MSG_DBG, "resuming\n");
-	    emcmotStatus->resuming = 0;
-	    emcmotDebug->stepping = 0;
-	    emcmotQueue = emcmotPrimQueue;
-	    emcmotConfig->vtp->tpResume(emcmotQueue);
-	     *emcmot_hal_data->pause_state = PS_RUNNING;
-	     break;
-	}
-	if (emcmotDebug->stepping) {
-	    rtapi_print_msg(RTAPI_MSG_DBG, "step signalled - resuming\n");
-	    emcmotQueue = emcmotPrimQueue;
-	    emcmotConfig->vtp->tpResume(emcmotQueue);
-	    *emcmot_hal_data->pause_state = PS_RUNNING;
-	    break;
-	}
-	// note fall through - check for jog and return motions only once
-
-    case  PS_PAUSED_IN_OFFSET:
-	// also PS_PAUSED if not resuming
-	// on alternate queue  here, all motion stopped
-
-	if (emcmotStatus->resuming || emcmotDebug->stepping) {
-	    // resume, or step was signalled during PS_PAUSED_IN_OFFSET
-	    // execute return move, which should result in state PS_PAUSED
-	    rtapi_print_msg(RTAPI_MSG_DBG, "resuming from PAUSED_IN_OFFSET\n");
-
-	    // clamp velocity
-	    emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) =
-		(*emcmot_hal_data->pause_jog_vel < emcmotCommand->ini_maxvel) ?
-		*emcmot_hal_data->pause_jog_vel : emcmotCommand->ini_maxvel;
-
-	    emcmotConfig->vtp->tpSetId(emcmotQueue, MOTION_PAUSED_RETURN_MOVE);
-	    if (-1 == emcmotConfig->vtp->tpAddLine(emcmotQueue,
-						   emcmotStatus->pause_carte_pos,
-						   TC_LINEAR,
-						   emcmotStatus->current_vel,
-						   emcmotCommand->ini_maxvel,
-						   emcmotCommand->acc,
-						   emcmotStatus->enables_new,
-						   // FIMXE: unsure
-						   0,     // FIXME: dont wait for atspeed (?)
-						   -1,
-						   emcmotCommand->tag)) {
-		reportError(_("can't add coordinated return move"));
-		emcmotStatus->commandStatus = EMCMOT_COMMAND_BAD_EXEC;
-		abort_and_switchback();
-		SET_MOTION_ERROR_FLAG(1);
-	    } else {
-		emcmotStatus->id = MOTION_PAUSED_RETURN_MOVE;
-		SET_MOTION_ERROR_FLAG(0);
-		rtapi_print_msg(RTAPI_MSG_DBG, "return move to x=%f y=%f z=%f vel=%f added\n",
-				emcmotStatus->pause_carte_pos.tran.x,emcmotStatus->pause_carte_pos.tran.y,
-				emcmotStatus->pause_carte_pos.tran.z, emcmotStatus->current_vel);
-	    }
-	    *emcmot_hal_data->pause_state = PS_RETURNING;
-	    break;
-	}
-
-	update_offset_pose();
-	*emcmot_hal_data->pause_offset_in_range = inRange(emcmotStatus->pause_offset_carte_pos, 0, NULL);
-
-	EmcPose cpos;
-	emcmotConfig->vtp->tpGetPos(emcmotQueue, &cpos);
-
-	if (*emcmot_hal_data->pause_offset_enable &&
-	    *emcmot_hal_data->pause_offset_in_range &&
-	    (!EQUAL_EMC_POSE(emcmotStatus->pause_offset_carte_pos,cpos)) &&
-	    (*emcmot_hal_data->pause_jog_vel > MINIMUM_JOG_VELOCITY)) {
-	    // not where we should be - insert jog move.
-
-	    // clamp velocity
-	    emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) =
-		(*emcmot_hal_data->pause_jog_vel < emcmotCommand->ini_maxvel) ?
-		*emcmot_hal_data->pause_jog_vel : emcmotCommand->ini_maxvel;
-
-	    rtapi_print_msg(RTAPI_MSG_DBG, "insert jog move\n");
-	    emcmotConfig->vtp->tpSetId(emcmotQueue, MOTION_PAUSED_JOG_MOVE);
-	    if (-1 == emcmotConfig->vtp->tpAddLine(emcmotQueue, emcmotStatus->pause_offset_carte_pos, TC_LINEAR,
-				emcmotStatus->current_vel , emcmotCommand->ini_maxvel,
-				emcmotCommand->acc,
-				emcmotStatus->enables_new,  // ???
-				0, // dont wait for atspeed  ???
-				-1,
-                emcmotCommand->tag)) { // no indexrotary action ???
-		reportError(_("can't add linear coordinated jog move"));
-		emcmotStatus->commandStatus = EMCMOT_COMMAND_BAD_EXEC;
-		abort_and_switchback();
-		SET_MOTION_ERROR_FLAG(1);
-	    } else {
-		emcmotStatus->id = MOTION_PAUSED_JOG_MOVE;
-		SET_MOTION_ERROR_FLAG(0);
-	    }
-	    *emcmot_hal_data->pause_state = PS_JOGGING;
-	}
-	break;
-
-    case PS_JOGGING:
-	if (emcmotConfig->vtp->tpIsDone(emcmotQueue)) { // jog motion stopped
-	    rtapi_print_msg(RTAPI_MSG_DBG, "stopped after jog\n");
-
-	    EmcPose cpos;
-	    emcmotConfig->vtp->tpGetPos(emcmotQueue, &cpos);
-	    if (EQUAL_EMC_POSE(emcmotStatus->pause_carte_pos,cpos)) {
-		// at initial pause position.
-		*emcmot_hal_data->pause_state = PS_PAUSED;
-	    } else {
-		*emcmot_hal_data->pause_state = PS_PAUSED_IN_OFFSET;
-	    }
+static void process_inputs(void) {
+	int joint_num;
+	double abs_ferror, tmp, scale;
+	joint_hal_t *joint_data;
+	emcmot_joint_t *joint;
+	unsigned char enables;
+	/* read spindle angle (for threading, etc) */
+	emcmotStatus->spindleRevs = *emcmot_hal_data->spindle_revs;
+	emcmotStatus->spindleSpeedIn = *emcmot_hal_data->spindle_speed_in;
+	emcmotStatus->spindle_is_atspeed = *emcmot_hal_data->spindle_is_atspeed;
+	/* compute net feed and spindle scale factors */
+	if (emcmotStatus->motion_state == EMCMOT_MOTION_COORD) {
+		/* use the enables that were queued with the current move */
+		enables = emcmotStatus->enables_queued;
 	} else {
-	    // jog move still in progress
-	    if (!*emcmot_hal_data->pause_offset_enable) {
-		// stop a move in progress
-		emcmotConfig->vtp->tpClear(emcmotQueue);
-		EmcPose here;
-		emcmotConfig->vtp->tpGetPos(emcmotQueue, &here);
-		if (EQUAL_EMC_POSE(emcmotStatus->pause_offset_carte_pos, here)) {
-		    rtapi_print_msg(RTAPI_MSG_DBG, "move stopped, in initial pause position\n");
-		    *emcmot_hal_data->pause_state = PS_PAUSED;
+		/* use the enables that are in effect right now */
+		enables = emcmotStatus->enables_new;
+	}
+	/* feed scaling first:  feed_scale, adaptive_feed, and feed_hold */
+
+	// ROBY: Read external velocity command
+	scale = 1.0;
+	if (enables & FS_ENABLED) {
+		if (emcmotStatus->motionType == EMC_MOTION_TYPE_TRAVERSE) {
+			scale *= emcmotStatus->rapid_scale;
 		} else {
-		    rtapi_print_msg(RTAPI_MSG_DBG, "move stopped in offset\n");
-		    *emcmot_hal_data->pause_state = PS_PAUSED_IN_OFFSET;
+			scale *= emcmotStatus->feed_scale;
+			//scale = ext_vel_cmds;
+
+			//scale = rand();
+			//scale /= 2147483647/2;
 		}
-	    }
 	}
-	break;
-
-    case PS_RETURNING:
-	if (emcmotConfig->vtp->tpIsDone(emcmotQueue)) { // return  motion stopped
-	    rtapi_print_msg(RTAPI_MSG_DBG, "return move complete\n");
-	    // since resuming still active, next cycle will switch
-	    // back to primary q and resume
-	     *emcmot_hal_data->pause_state = PS_PAUSED;
-	}
-	break;
-    }
-    /* save the resulting combined scale factor */
-    emcmotStatus->net_feed_scale = scale;
-
-    /* now do spindle scaling */
-    scale = 1.0;
-    if ( enables & SS_ENABLED ) {
-	scale *= emcmotStatus->spindle_scale;
-    }
-    /*non maskable (except during spindle synch move) spindle inhibit pin */
-	if ( enables & *emcmot_hal_data->spindle_inhibit ) {
-	    scale = 0;
-	}
-    /* save the resulting combined scale factor */
-    emcmotStatus->net_spindle_scale = scale;
-
-    /* read and process per-joint inputs */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint HAL data */
-	joint_data = &(emcmot_hal_data->joint[joint_num]);
-	/* point to joint data */
-	joint = &joints[joint_num];
-	if (!GET_JOINT_ACTIVE_FLAG(joint)) {
-	    /* if joint is not active, skip it */
-	    continue;
-	}
-	/* copy data from HAL to joint structure */
-	joint->index_enable = *(joint_data->index_enable);
-	joint->motor_pos_fb = *(joint_data->motor_pos_fb);
-	/* calculate pos_fb */
-	if (( joint->home_state == HOME_INDEX_SEARCH_WAIT ) &&
-	    ( joint->index_enable == 0 )) {
-	    /* special case - we're homing the joint, and it just
-	       hit the index.  The encoder count might have made a
-	       step change.  The homing code will correct for it
-	       later, so we ignore motor_pos_fb and set pos_fb
-	       to match the commanded value instead. */
-	    joint->pos_fb = joint->pos_cmd;
-	} else {
-	    /* normal case: subtract backlash comp and motor offset */
-	    joint->pos_fb = joint->motor_pos_fb -
-		(joint->backlash_filt + joint->motor_offset);
-	}
-	/* calculate following error */
-	joint->ferror = joint->pos_cmd - joint->pos_fb;
-	abs_ferror = rtapi_fabs(joint->ferror);
-	/* update maximum ferror if needed */
-	if (abs_ferror > joint->ferror_high_mark) {
-	    joint->ferror_high_mark = abs_ferror;
-	}
-
-	/* calculate following error limit */
-	if (joint->vel_limit > 0.0) {
-	    joint->ferror_limit =
-		joint->max_ferror * rtapi_fabs(joint->vel_cmd) / joint->vel_limit;
-	} else {
-	    joint->ferror_limit = 0;
-	}
-	if (joint->ferror_limit < joint->min_ferror) {
-	    joint->ferror_limit = joint->min_ferror;
-	}
-	/* update following error flag */
-	if (abs_ferror > joint->ferror_limit) {
-	    SET_JOINT_FERROR_FLAG(joint, 1);
-	} else {
-	    SET_JOINT_FERROR_FLAG(joint, 0);
-	}
-
-	/* read limit switches */
-	if (*(joint_data->pos_lim_sw)) {
-	    SET_JOINT_PHL_FLAG(joint, 1);
-	} else {
-	    SET_JOINT_PHL_FLAG(joint, 0);
-	}
-	if (*(joint_data->neg_lim_sw)) {
-	    SET_JOINT_NHL_FLAG(joint, 1);
-	} else {
-	    SET_JOINT_NHL_FLAG(joint, 0);
-	}
-	joint->on_pos_limit = GET_JOINT_PHL_FLAG(joint);
-	joint->on_neg_limit = GET_JOINT_NHL_FLAG(joint);
-	/* read amp fault input */
-	if (*(joint_data->amp_fault)) {
-	    SET_JOINT_FAULT_FLAG(joint, 1);
-	} else {
-	    SET_JOINT_FAULT_FLAG(joint, 0);
-	}
-
-	/* read home switch input */
-	if (*(joint_data->home_sw)) {
-	    SET_JOINT_HOME_SWITCH_FLAG(joint, 1);
-	} else {
-	    SET_JOINT_HOME_SWITCH_FLAG(joint, 0);
-	}
-	/* end of read and process joint inputs loop */
-    }
-
-    // a fault was signalled during a spindle-orient in progress
-    // signal error, and cancel the orient
-    if (*(emcmot_hal_data->spindle_orient)) {
-	if (*(emcmot_hal_data->spindle_orient_fault)) {
-	    emcmotStatus->spindle.orient_state = EMCMOT_ORIENT_FAULTED;
-	    *(emcmot_hal_data->spindle_orient) = 0;
-	    emcmotStatus->spindle.orient_fault = *(emcmot_hal_data->spindle_orient_fault);
-	    reportError(_("fault %d during orient in progress"), emcmotStatus->spindle.orient_fault);
-	    emcmotStatus->commandStatus = EMCMOT_COMMAND_INVALID_COMMAND;
-	    abort_and_switchback(); // tpAbort(emcmotQueue);
-	    SET_MOTION_ERROR_FLAG(1);
-	} else if (*(emcmot_hal_data->spindle_is_oriented)) {
-	    *(emcmot_hal_data->spindle_orient) = 0;
-	    *(emcmot_hal_data->spindle_locked) = 1;
-	    emcmotStatus->spindle.locked = 1;
-	    emcmotStatus->spindle.brake = 1;
-	    emcmotStatus->spindle.orient_state = EMCMOT_ORIENT_COMPLETE;
-	    rtapi_print_msg(RTAPI_MSG_DBG, "SPINDLE_ORIENT complete, spindle locked");
-	}
-    }
-}
-
-static void do_forward_kins(void)
-{
-/* there are four possibilities for kinType:
-
-   IDENTITY: Both forward and inverse kins are available, and they
-   can used without an initial guess, even if one or more joints
-   are not homed.  In this case, we apply the forward kins to the
-   joint->pos_fb to produce carte_pos_fb, and if all axes are homed
-   we set carte_pos_fb_ok to 1 to indicate that the feedback data
-   is good.
-
-   BOTH: Both forward and inverse kins are available, but the forward
-   kins need an initial guess, and/or the kins require all joints to
-   be homed before they work properly.  Here we must tread carefully.
-   IF all the joints have been homed, we apply the forward kins to
-   the joint->pos_fb to produce carte_pos_fb, and set carte_pos_fb_ok
-   to indicate that the feedback is good.  We use the previous value
-   of carte_pos_fb as the initial guess.  If all joints have not been
-   homed, we don't call the kinematics, instead we set carte_pos_fb to
-   the cartesean coordinates of home, as stored in the global worldHome,
-   and we set carte_fb_ok to 0 to indicate that the feedback is invalid.
-\todo  FIXME - maybe setting to home isn't the right thing to do.  We need
-   it to be set to home eventually, (right before the first attemt to
-   run the kins), but that doesn't mean we should say we're at home
-   when we're not.
-
-   INVERSE_ONLY: Only inverse kinematics are available, forward
-   kinematics cannot be used.  So we have to fake it, the question is
-   simply "what way of faking it is best".  In free mode, or if all
-   axes have not been homed, the feedback position is unknown.  If
-   we are in teleop or coord mode, or if we are in free mode and all
-   axes are homed, and haven't been moved since they were homed, then
-   we set carte_pos_fb to carte_pos_cmd, and set carte_pos_fb_ok to 1.
-   If we are in free mode, and any joint is not homed, or any joint has
-   moved since it was homed, we leave cart_pos_fb alone, and set
-   carte_pos_fb_ok to 0.
-
-   FORWARD_ONLY: Only forward kinematics are available, inverse kins
-   cannot be used.  This exists for completeness only, since EMC won't
-   work without inverse kinematics.
-
-*/
-
-/*! \todo FIXME FIXME FIXME - need to put a rate divider in here, run it
-   at the traj rate */
-
-    double joint_pos[EMCMOT_MAX_JOINTS] = {0,};
-    int joint_num, result;
-    emcmot_joint_t *joint;
-
-    /* copy joint position feedback to local array */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint struct */
-	joint = &joints[joint_num];
-	/* copy feedback */
-	joint_pos[joint_num] = joint->pos_fb;
-	/* check for homed, only if the current joint is active */
-	if (!GET_JOINT_ACTIVE_FLAG(joint)) {
-	    /* if joint is not active, don't even look at its limits */
-	    continue;
-	}
-    }
-    switch (kinType) {
-
-    case KINEMATICS_IDENTITY:
-	emcmotConfig->vtk->kinematicsForward(joint_pos, &emcmotStatus->carte_pos_fb, &fflags,
-	    &iflags);
-	if (checkAllHomed()) {
-	    emcmotStatus->carte_pos_fb_ok = 1;
-	} else {
-	    emcmotStatus->carte_pos_fb_ok = 0;
-	}
-	break;
-
-    case KINEMATICS_BOTH:
-	if (checkAllHomed()) {
-	    /* is previous value suitable for use as initial guess? */
-	    if (!emcmotStatus->carte_pos_fb_ok) {
-		/* no, use home position as initial guess */
-		emcmotStatus->carte_pos_fb = emcmotStatus->world_home;
-	    }
-	    /* calculate Cartesean position feedback from joint pos fb */
-	    result =
-		emcmotConfig->vtk->kinematicsForward(joint_pos, &emcmotStatus->carte_pos_fb,
-		&fflags, &iflags);
-	    /* check to make sure kinematics converged */
-	    if (result < 0) {
-		/* error during kinematics calculations */
-		emcmotStatus->carte_pos_fb_ok = 0;
-	    } else {
-		/* it worked! */
-		emcmotStatus->carte_pos_fb_ok = 1;
-	    }
-	} else {
-	    emcmotStatus->carte_pos_fb_ok = 0;
-	}
-	break;
-
-    case KINEMATICS_INVERSE_ONLY:
-
-	if ((GET_MOTION_COORD_FLAG()) || (GET_MOTION_TELEOP_FLAG())) {
-	    /* use Cartesean position command as feedback value */
-	    emcmotStatus->carte_pos_fb = emcmotStatus->carte_pos_cmd;
-	    emcmotStatus->carte_pos_fb_ok = 1;
-	} else {
-	    emcmotStatus->carte_pos_fb_ok = 0;
-	}
-	break;
-
-    default:
-	emcmotStatus->carte_pos_fb_ok = 0;
-	break;
-    }
-}
-
-static void check_for_faults(void)
-{
-    int joint_num;
-    emcmot_joint_t *joint;
-    int neg_limit_override, pos_limit_override;
-
-    /* check for various global fault conditions */
-    /* only check enable input if running */
-    if ( GET_MOTION_ENABLE_FLAG() != 0 ) {
-	if ( *(emcmot_hal_data->enable) == 0 ) {
-	    reportError(_("motion stopped by enable input"));
-	    emcmotDebug->enabling = 0;
-	}
-    }
-    /* check for various joint fault conditions */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint data */
-	joint = &joints[joint_num];
-	/* only check active, enabled axes */
-	if ( GET_JOINT_ACTIVE_FLAG(joint) && GET_JOINT_ENABLE_FLAG(joint) ) {
-	    /* are any limits for this joint overridden? */
-	    neg_limit_override = emcmotStatus->overrideLimitMask & ( 1 << (joint_num*2));
-	    pos_limit_override = emcmotStatus->overrideLimitMask & ( 2 << (joint_num*2));
-	    /* check for hard limits */
-	    if ((GET_JOINT_PHL_FLAG(joint) && ! pos_limit_override ) ||
-		(GET_JOINT_NHL_FLAG(joint) && ! neg_limit_override )) {
-		/* joint is on limit switch, should we trip? */
-		if (GET_JOINT_HOMING_FLAG(joint)) {
-		    /* no, ignore limits */
-		} else {
-		    /* trip on limits */
-		    if (!GET_JOINT_ERROR_FLAG(joint)) {
-			/* report the error just this once */
-			reportError(_("joint %d on limit switch error"),
-			    joint_num);
-		    }
-		    SET_JOINT_ERROR_FLAG(joint, 1);
-		    emcmotDebug->enabling = 0;
+	if (enables & AF_ENABLED) {
+		/* read and clamp (0.0 to 1.0) adaptive feed HAL pin */
+		tmp = *emcmot_hal_data->adaptive_feed;
+		if (tmp > 1.0) {
+			tmp = 1.0;
+		} else if (tmp < 0.0) {
+			tmp = 0.0;
 		}
-	    }
-	    /* check for amp fault */
-	    if (GET_JOINT_FAULT_FLAG(joint)) {
-		/* joint is faulted, trip */
-		if (!GET_JOINT_ERROR_FLAG(joint)) {
-		    /* report the error just this once */
-		    reportError(_("joint %d amplifier fault"), joint_num);
-		}
-		SET_JOINT_ERROR_FLAG(joint, 1);
-		emcmotDebug->enabling = 0;
-	    }
-	    /* check for excessive following error */
-	    if (GET_JOINT_FERROR_FLAG(joint)) {
-		if (!GET_JOINT_ERROR_FLAG(joint)) {
-		    /* report the error just this once */
-		    reportError(_("joint %d following error"), joint_num);
-		}
-		SET_JOINT_ERROR_FLAG(joint, 1);
-		emcmotDebug->enabling = 0;
-	    }
-	/* end of if JOINT_ACTIVE_FLAG(joint) */
+		scale *= tmp;
 	}
-    /* end of check for joint faults loop */
-    }
-}
+	if (enables & FH_ENABLED) {
+		/* read feed hold HAL pin */
+		if (*emcmot_hal_data->feed_hold) {
+			scale = 0;
+		}
+	}
+	/*non maskable (except during spinndle synch move) feed hold inhibit pin */
+	if (enables & *emcmot_hal_data->feed_inhibit) {
+		scale = 0;
+	}
 
-static void set_operating_mode(void)
-{
-    int joint_num;
-    emcmot_joint_t *joint;
+	// pause FSM
+	switch (*emcmot_hal_data->pause_state) {
 
-    /* check for disabling */
-    if (!emcmotDebug->enabling && GET_MOTION_ENABLE_FLAG()) {
-	/* clear out the motion emcmotDebug->queue and interpolators */
-	emcmotConfig->vtp->tpClear(emcmotQueue);
+	case PS_RUNNING: // nothing to do.
+		break;
+
+	case PS_PAUSING_FOR_STEP:
+		rtapi_print_msg(RTAPI_MSG_DBG, "paused for step\n");
+		emcmotConfig->vtp->tpPause(emcmotQueue);
+		*emcmot_hal_data->pause_state = PS_PAUSING;
+		;
+		break;
+
+	case PS_PAUSING:
+		// waiting for tp to actually stop since a spindle-sync motion might be in progress
+		if (emcmotConfig->vtp->tpIsPaused(emcmotQueue)) {
+			rtapi_print_msg(RTAPI_MSG_DBG, "stopped\n");
+
+			// switch to alternate motion queue:
+
+			// record type of paused motion
+			*emcmot_hal_data->paused_at_motion_type =
+					emcmotConfig->vtp->tpGetMotionType(emcmotQueue);
+
+			// record current carte pos for return move
+			emcmotConfig->vtp->tpGetPos(emcmotQueue,
+					&emcmotStatus->pause_carte_pos);
+
+			// clone parameters from primary queue
+			emcmotConfig->vtp->tpSnapshot(emcmotPrimQueue, emcmotAltQueue);
+
+			// side effect: this also clears emcmotStatus fields
+			// current_vel, requested_vel, spindleSync, distance_to_go
+			emcmotConfig->vtp->tpClear(emcmotAltQueue);
+
+			// start alternate queue where we left off the primary queue
+			emcmotConfig->vtp->tpSetPos(emcmotAltQueue,
+					&emcmotStatus->pause_carte_pos);
+
+			// switch to alternate motion queue
+			emcmotQueue = emcmotAltQueue;
+
+			// at this point, ready to run motions on alternate queue
+			*emcmot_hal_data->pause_state = PS_PAUSED;
+		}
+		break;
+
+	case PS_PAUSED:
+		// on alternate queue, all motion stopped
+		// position is the initial pause position, so ok to resume
+		if (emcmotStatus->resuming) {
+			// a resume was signalled.
+			// switch to primary queue and resume.
+			rtapi_print_msg(RTAPI_MSG_DBG, "resuming\n");
+			emcmotStatus->resuming = 0;
+			emcmotDebug->stepping = 0;
+			emcmotQueue = emcmotPrimQueue;
+			emcmotConfig->vtp->tpResume(emcmotQueue);
+			*emcmot_hal_data->pause_state = PS_RUNNING;
+			break;
+		}
+		if (emcmotDebug->stepping) {
+			rtapi_print_msg(RTAPI_MSG_DBG, "step signalled - resuming\n");
+			emcmotQueue = emcmotPrimQueue;
+			emcmotConfig->vtp->tpResume(emcmotQueue);
+			*emcmot_hal_data->pause_state = PS_RUNNING;
+			break;
+		}
+		// note fall through - check for jog and return motions only once
+
+	case PS_PAUSED_IN_OFFSET:
+		// also PS_PAUSED if not resuming
+		// on alternate queue  here, all motion stopped
+
+		if (emcmotStatus->resuming || emcmotDebug->stepping) {
+			// resume, or step was signalled during PS_PAUSED_IN_OFFSET
+			// execute return move, which should result in state PS_PAUSED
+			rtapi_print_msg(RTAPI_MSG_DBG, "resuming from PAUSED_IN_OFFSET\n");
+
+			// clamp velocity
+			emcmotStatus->current_vel =
+					(*emcmot_hal_data->current_vel) =
+							(*emcmot_hal_data->pause_jog_vel
+									< emcmotCommand->ini_maxvel) ?
+									*emcmot_hal_data->pause_jog_vel :
+									emcmotCommand->ini_maxvel;
+
+			emcmotConfig->vtp->tpSetId(emcmotQueue, MOTION_PAUSED_RETURN_MOVE);
+			if (-1
+					== emcmotConfig->vtp->tpAddLine(emcmotQueue,
+							emcmotStatus->pause_carte_pos, TC_LINEAR,
+							emcmotStatus->current_vel,
+							emcmotCommand->ini_maxvel, emcmotCommand->acc,
+							emcmotStatus->enables_new,
+							// FIMXE: unsure
+							0,// FIXME: dont wait for atspeed (?)
+							-1, emcmotCommand->tag)) {
+				reportError(_("can't add coordinated return move"));
+				emcmotStatus->commandStatus = EMCMOT_COMMAND_BAD_EXEC;
+				abort_and_switchback();
+				SET_MOTION_ERROR_FLAG(1);
+			} else {
+				emcmotStatus->id = MOTION_PAUSED_RETURN_MOVE;
+				SET_MOTION_ERROR_FLAG(0);
+				rtapi_print_msg(RTAPI_MSG_DBG,
+						"return move to x=%f y=%f z=%f vel=%f added\n",
+						emcmotStatus->pause_carte_pos.tran.x,
+						emcmotStatus->pause_carte_pos.tran.y,
+						emcmotStatus->pause_carte_pos.tran.z,
+						emcmotStatus->current_vel);
+			}
+			*emcmot_hal_data->pause_state = PS_RETURNING;
+			break;
+		}
+
+		update_offset_pose();
+		*emcmot_hal_data->pause_offset_in_range = inRange(
+				emcmotStatus->pause_offset_carte_pos, 0, NULL );
+
+		EmcPose cpos;
+		emcmotConfig->vtp->tpGetPos(emcmotQueue, &cpos);
+
+		if (*emcmot_hal_data->pause_offset_enable
+				&& *emcmot_hal_data->pause_offset_in_range
+				&& (!EQUAL_EMC_POSE(emcmotStatus->pause_offset_carte_pos,cpos)) &&
+				(*emcmot_hal_data->pause_jog_vel > MINIMUM_JOG_VELOCITY)){
+				// not where we should be - insert jog move.
+
+				// clamp velocity
+				emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) =
+				(*emcmot_hal_data->pause_jog_vel < emcmotCommand->ini_maxvel) ?
+				*emcmot_hal_data->pause_jog_vel : emcmotCommand->ini_maxvel;
+
+				rtapi_print_msg(RTAPI_MSG_DBG, "insert jog move\n");
+				emcmotConfig->vtp->tpSetId(emcmotQueue, MOTION_PAUSED_JOG_MOVE);
+				if (-1 == emcmotConfig->vtp->tpAddLine(emcmotQueue, emcmotStatus->pause_offset_carte_pos, TC_LINEAR,
+								emcmotStatus->current_vel , emcmotCommand->ini_maxvel,
+								emcmotCommand->acc,
+								emcmotStatus->enables_new,// ???
+								0,// dont wait for atspeed  ???
+								-1,
+								emcmotCommand->tag)) { // no indexrotary action ???
+					reportError(_("can't add linear coordinated jog move"));
+					emcmotStatus->commandStatus = EMCMOT_COMMAND_BAD_EXEC;
+					abort_and_switchback();
+					SET_MOTION_ERROR_FLAG(1);
+				} else {
+					emcmotStatus->id = MOTION_PAUSED_JOG_MOVE;
+					SET_MOTION_ERROR_FLAG(0);
+				}
+				*emcmot_hal_data->pause_state = PS_JOGGING;
+			}
+			break;
+
+			case PS_JOGGING:
+			if (emcmotConfig->vtp->tpIsDone(emcmotQueue)) { // jog motion stopped
+				rtapi_print_msg(RTAPI_MSG_DBG, "stopped after jog\n");
+
+				EmcPose cpos;
+				emcmotConfig->vtp->tpGetPos(emcmotQueue, &cpos);
+				if (EQUAL_EMC_POSE(emcmotStatus->pause_carte_pos,cpos)) {
+					// at initial pause position.
+					*emcmot_hal_data->pause_state = PS_PAUSED;
+				} else {
+					*emcmot_hal_data->pause_state = PS_PAUSED_IN_OFFSET;
+				}
+			} else {
+				// jog move still in progress
+				if (!*emcmot_hal_data->pause_offset_enable) {
+					// stop a move in progress
+					emcmotConfig->vtp->tpClear(emcmotQueue);
+					EmcPose here;
+					emcmotConfig->vtp->tpGetPos(emcmotQueue, &here);
+					if (EQUAL_EMC_POSE(emcmotStatus->pause_offset_carte_pos, here)) {
+						rtapi_print_msg(RTAPI_MSG_DBG, "move stopped, in initial pause position\n");
+						*emcmot_hal_data->pause_state = PS_PAUSED;
+					} else {
+						rtapi_print_msg(RTAPI_MSG_DBG, "move stopped in offset\n");
+						*emcmot_hal_data->pause_state = PS_PAUSED_IN_OFFSET;
+					}
+				}
+			}
+			break;
+
+			case PS_RETURNING:
+			if (emcmotConfig->vtp->tpIsDone(emcmotQueue)) { // return  motion stopped
+				rtapi_print_msg(RTAPI_MSG_DBG, "return move complete\n");
+				// since resuming still active, next cycle will switch
+				// back to primary q and resume
+				*emcmot_hal_data->pause_state = PS_PAUSED;
+			}
+			break;
+		}
+		/* save the resulting combined scale factor */
+	emcmotStatus->net_feed_scale = scale;
+
+	/* now do spindle scaling */
+	scale = 1.0;
+	if (enables & SS_ENABLED) {
+		scale *= emcmotStatus->spindle_scale;
+	}
+	/*non maskable (except during spindle synch move) spindle inhibit pin */
+	if (enables & *emcmot_hal_data->spindle_inhibit) {
+		scale = 0;
+	}
+	/* save the resulting combined scale factor */
+	emcmotStatus->net_spindle_scale = scale;
+
+	/* read and process per-joint inputs */
 	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint data */
-	    joint = &joints[joint_num];
-	    /* disable free mode planner */
-	    joint->free_tp_enable = 0;
-	    /* drain coord mode interpolators */
-	    cubicDrain(&(joint->cubic));
-	    if (GET_JOINT_ACTIVE_FLAG(joint)) {
-		SET_JOINT_ENABLE_FLAG(joint, 0);
-		SET_JOINT_HOMING_FLAG(joint, 0);
-		joint->home_state = HOME_IDLE;
-	    }
-	    /* don't clear the joint error flag, since that may signify why
-	       we just went into disabled state */
-	}
-	/* reset the trajectory interpolation counter, so that the kinematics
-	   functions called during the disabled state run at the nominal
-	   trajectory rate rather than the servo rate. It's loaded with
-	   emcmotConfig->interpolationRate when it goes to zero. */
-/*! \todo FIXME - interpolation is still under construction */
-/*! \todo Another #if 0 */
-#if 0
-	interpolationCounter = 0;
-#endif
-	SET_MOTION_ENABLE_FLAG(0);
-	/* don't clear the motion error flag, since that may signify why we
-	   just went into disabled state */
-    }
-
-    /* check for emcmotDebug->enabling */
-    if (emcmotDebug->enabling && !GET_MOTION_ENABLE_FLAG()) {
-	emcmotConfig->vtp->tpSetPos(emcmotQueue, &emcmotStatus->carte_pos_cmd);
-	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint data */
-	    joint = &joints[joint_num];
-
-	    joint->free_pos_cmd = joint->pos_cmd;
-	    if (GET_JOINT_ACTIVE_FLAG(joint)) {
-		SET_JOINT_ENABLE_FLAG(joint, 1);
-		SET_JOINT_HOMING_FLAG(joint, 0);
-		joint->home_state = HOME_IDLE;
-	    }
-	    /* clear any outstanding joint errors when going into enabled
-	       state */
-	    SET_JOINT_ERROR_FLAG(joint, 0);
-	}
-	SET_MOTION_ENABLE_FLAG(1);
-	/* clear any outstanding motion errors when going into enabled state */
-	SET_MOTION_ERROR_FLAG(0);
-    }
-
-    /* check for entering teleop mode */
-    if (emcmotDebug->teleoperating && !GET_MOTION_TELEOP_FLAG()) {
-	if (GET_MOTION_INPOS_FLAG()) {
-
-	    /* update coordinated emcmotDebug->queue position */
-	    emcmotConfig->vtp->tpSetPos(emcmotQueue, &emcmotStatus->carte_pos_cmd);
-
-	    /* drain the cubics so they'll synch up */
-	    for (joint_num = 0; joint_num < num_joints; joint_num++) {
+		/* point to joint HAL data */
+		joint_data = &(emcmot_hal_data->joint[joint_num]);
 		/* point to joint data */
 		joint = &joints[joint_num];
-		cubicDrain(&(joint->cubic));
-	    }
-	    /* Initialize things to do when starting teleop mode. */
-	    ZERO_EMC_POSE(emcmotDebug->teleop_data.currentVel);
-	    ZERO_EMC_POSE(emcmotDebug->teleop_data.desiredVel);
-	    ZERO_EMC_POSE(emcmotDebug->teleop_data.currentAccel);
-	    ZERO_EMC_POSE(emcmotDebug->teleop_data.desiredAccel);
-	    SET_MOTION_TELEOP_FLAG(1);
-	    SET_MOTION_ERROR_FLAG(0);
-	} else {
-	    /* not in position-- don't honor mode change */
-	    emcmotDebug->teleoperating = 0;
-	}
-    } else {
-	if (GET_MOTION_INPOS_FLAG()) {
-	    if (!emcmotDebug->teleoperating && GET_MOTION_TELEOP_FLAG()) {
-		SET_MOTION_TELEOP_FLAG(0);
-		if (!emcmotDebug->coordinating) {
-		    for (joint_num = 0; joint_num < num_joints;
-			joint_num++) {
-			/* point to joint data */
-			joint = &joints[joint_num];
-			/* update free planner positions */
-			joint->free_pos_cmd = joint->pos_cmd;
-		    }
+		if (!GET_JOINT_ACTIVE_FLAG(joint)) {
+			/* if joint is not active, skip it */
+			continue;
 		}
-	    }
+		/* copy data from HAL to joint structure */
+		joint->index_enable = *(joint_data->index_enable);
+		joint->motor_pos_fb = *(joint_data->motor_pos_fb);
+		/* calculate pos_fb */
+		if ((joint->home_state == HOME_INDEX_SEARCH_WAIT)
+				&& (joint->index_enable == 0)) {
+			/* special case - we're homing the joint, and it just
+			 hit the index.  The encoder count might have made a
+			 step change.  The homing code will correct for it
+			 later, so we ignore motor_pos_fb and set pos_fb
+			 to match the commanded value instead. */
+			joint->pos_fb = joint->pos_cmd;
+		} else {
+			/* normal case: subtract backlash comp and motor offset */
+			joint->pos_fb = joint->motor_pos_fb
+					- (joint->backlash_filt + joint->motor_offset);
+		}
+		/* calculate following error */
+		joint->ferror = joint->pos_cmd - joint->pos_fb;
+		abs_ferror = rtapi_fabs(joint->ferror);
+		/* update maximum ferror if needed */
+		if (abs_ferror > joint->ferror_high_mark) {
+			joint->ferror_high_mark = abs_ferror;
+		}
+
+		/* calculate following error limit */
+		if (joint->vel_limit > 0.0) {
+			joint->ferror_limit = joint->max_ferror * rtapi_fabs(joint->vel_cmd)
+					/ joint->vel_limit;
+		} else {
+			joint->ferror_limit = 0;
+		}
+		if (joint->ferror_limit < joint->min_ferror) {
+			joint->ferror_limit = joint->min_ferror;
+		}
+		/* update following error flag */
+		if (abs_ferror > joint->ferror_limit) {
+			SET_JOINT_FERROR_FLAG(joint, 1);
+		} else {
+			SET_JOINT_FERROR_FLAG(joint, 0);
+		}
+
+		/* read limit switches */
+		if (*(joint_data->pos_lim_sw)) {
+			SET_JOINT_PHL_FLAG(joint, 1);
+		} else {
+			SET_JOINT_PHL_FLAG(joint, 0);
+		}
+		if (*(joint_data->neg_lim_sw)) {
+			SET_JOINT_NHL_FLAG(joint, 1);
+		} else {
+			SET_JOINT_NHL_FLAG(joint, 0);
+		}
+		joint->on_pos_limit = GET_JOINT_PHL_FLAG(joint);
+		joint->on_neg_limit = GET_JOINT_NHL_FLAG(joint);
+		/* read amp fault input */
+		if (*(joint_data->amp_fault)) {
+			SET_JOINT_FAULT_FLAG(joint, 1);
+		} else {
+			SET_JOINT_FAULT_FLAG(joint, 0);
+		}
+
+		/* read home switch input */
+		if (*(joint_data->home_sw)) {
+			SET_JOINT_HOME_SWITCH_FLAG(joint, 1);
+		} else {
+			SET_JOINT_HOME_SWITCH_FLAG(joint, 0);
+		}
+		/* end of read and process joint inputs loop */
 	}
 
-	/* check for entering coordinated mode */
-	if (emcmotDebug->coordinating && !GET_MOTION_COORD_FLAG()) {
-	    if (GET_MOTION_INPOS_FLAG()) {
-		/* preset traj planner to current position */
-		emcmotConfig->vtp->tpSetPos(emcmotQueue, &emcmotStatus->carte_pos_cmd);
-
-		/* drain the cubics so they'll synch up */
-		for (joint_num = 0; joint_num < num_joints; joint_num++) {
-		    /* point to joint data */
-		    joint = &joints[joint_num];
-		    cubicDrain(&(joint->cubic));
+	// a fault was signalled during a spindle-orient in progress
+	// signal error, and cancel the orient
+	if (*(emcmot_hal_data->spindle_orient)) {
+		if (*(emcmot_hal_data->spindle_orient_fault)) {
+			emcmotStatus->spindle.orient_state = EMCMOT_ORIENT_FAULTED;
+			*(emcmot_hal_data->spindle_orient) = 0;
+			emcmotStatus->spindle.orient_fault =
+					*(emcmot_hal_data->spindle_orient_fault);
+			reportError(_("fault %d during orient in progress"),
+					emcmotStatus->spindle.orient_fault);
+			emcmotStatus->commandStatus = EMCMOT_COMMAND_INVALID_COMMAND;
+			abort_and_switchback(); // tpAbort(emcmotQueue);
+			SET_MOTION_ERROR_FLAG(1);
+		} else if (*(emcmot_hal_data->spindle_is_oriented)) {
+			*(emcmot_hal_data->spindle_orient) = 0;
+			*(emcmot_hal_data->spindle_locked) = 1;
+			emcmotStatus->spindle.locked = 1;
+			emcmotStatus->spindle.brake = 1;
+			emcmotStatus->spindle.orient_state = EMCMOT_ORIENT_COMPLETE;
+			rtapi_print_msg(RTAPI_MSG_DBG,
+					"SPINDLE_ORIENT complete, spindle locked");
 		}
-		/* clear the override limits flags */
-		emcmotDebug->overriding = 0;
-		emcmotStatus->overrideLimitMask = 0;
-		SET_MOTION_COORD_FLAG(1);
-		SET_MOTION_TELEOP_FLAG(0);
-		SET_MOTION_ERROR_FLAG(0);
-	    } else {
-		/* not in position-- don't honor mode change */
-		emcmotDebug->coordinating = 0;
-	    }
 	}
-
-	/* check entering free space mode */
-	if (!emcmotDebug->coordinating && GET_MOTION_COORD_FLAG()) {
-	    if (GET_MOTION_INPOS_FLAG()) {
-		for (joint_num = 0; joint_num < num_joints; joint_num++) {
-		    /* point to joint data */
-		    joint = &joints[joint_num];
-		    /* set joint planner pos cmd to current location */
-		    joint->free_pos_cmd = joint->pos_cmd;
-		    /* but it can stay disabled until a move is required */
-		    joint->free_tp_enable = 0;
-		}
-		SET_MOTION_COORD_FLAG(0);
-		SET_MOTION_TELEOP_FLAG(0);
-		SET_MOTION_ERROR_FLAG(0);
-	    } else {
-		/* not in position-- don't honor mode change */
-		emcmotDebug->coordinating = 1;
-	    }
-	}
-    }
-    /*! \todo FIXME - this code is temporary - eventually this function will be
-       cleaned up and simplified, and 'motion_state' will become the master
-       for this info, instead of having to gather it from several flags */
-    if (!GET_MOTION_ENABLE_FLAG()) {
-	emcmotStatus->motion_state = EMCMOT_MOTION_DISABLED;
-    } else if (GET_MOTION_TELEOP_FLAG()) {
-	emcmotStatus->motion_state = EMCMOT_MOTION_TELEOP;
-    } else if (GET_MOTION_COORD_FLAG()) {
-	emcmotStatus->motion_state = EMCMOT_MOTION_COORD;
-    } else {
-	emcmotStatus->motion_state = EMCMOT_MOTION_FREE;
-    }
 }
 
-static void handle_jogwheels(void)
-{
-    int joint_num;
-    emcmot_joint_t *joint;
-    joint_hal_t *joint_data;
-    int new_jog_counts, delta;
-    double distance, pos, stop_dist;
+static void do_forward_kins(void) {
+	/* there are four possibilities for kinType:
 
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint data */
-	joint_data = &(emcmot_hal_data->joint[joint_num]);
-	joint = &joints[joint_num];
-	if (!GET_JOINT_ACTIVE_FLAG(joint)) {
-	    /* if joint is not active, skip it */
-	    continue;
-	}
-	/* get counts from jogwheel */
-	new_jog_counts = *(joint_data->jog_counts);
-	delta = new_jog_counts - joint->old_jog_counts;
-	/* save value for next time */
-	joint->old_jog_counts = new_jog_counts;
-	/* initialization complete */
-	if ( first_pass ) {
-	    continue;
-	}
-	/* did the wheel move? */
-	if ( delta == 0 ) {
-	    /* no, nothing to do */
-	    continue;
-	}
-	/* must be in free mode and enabled */
-	if (GET_MOTION_COORD_FLAG()) {
-	    continue;
-	}
-	if (!GET_MOTION_ENABLE_FLAG()) {
-	    continue;
-	}
-	/* the jogwheel input for this joint must be enabled */
-	if ( *(joint_data->jog_enable) == 0 ) {
-	    continue;
-	}
-	/* must not be homing */
-	if (emcmotStatus->homing_active) {
-	    continue;
-	}
-	/* must not be doing a keyboard jog */
-	if (joint->kb_jog_active) {
-	    continue;
-	}
-	if (emcmotStatus->net_feed_scale < 0.0001 ) {
-	    /* don't jog if feedhold is on or if feed override is zero */
-	    break;
-	}
-	/* calculate distance to jog */
-	distance = delta * *(joint_data->jog_scale);
-	/* check for joint already on hard limit */
-	if (distance > 0.0 && GET_JOINT_PHL_FLAG(joint)) {
-	    continue;
-	}
-	if (distance < 0.0 && GET_JOINT_NHL_FLAG(joint)) {
-	    continue;
-	}
-	/* calc target position for jog */
-	pos = joint->free_pos_cmd + distance;
-	/* don't jog past limits */
-	refresh_jog_limits(joint);
-	if (pos > joint->max_jog_limit) {
-	    continue;
-	}
-	if (pos < joint->min_jog_limit) {
-	    continue;
-	}
-	/* The default is to move exactly as far as the wheel commands,
-	   even if that move takes much longer than the wheel movement
-	   that commanded it.  Some folks prefer that the move stop as
-	   soon as the wheel does, even if that means not moving the
-	   commanded distance.  Velocity mode is for those folks.  If
-	   the command is faster than the machine can track, excess
-	   command is simply dropped. */
-	if ( *(joint_data->jog_vel_mode) ) {
-            double v = joint->vel_limit * emcmotStatus->net_feed_scale;
-	    /* compute stopping distance at max speed */
-	    stop_dist = v * v / ( 2 * joint->acc_limit);
-	    /* if commanded position leads the actual position by more
-	       than stopping distance, discard excess command */
-	    if ( pos > joint->pos_cmd + stop_dist ) {
-		pos = joint->pos_cmd + stop_dist;
-	    } else if ( pos < joint->pos_cmd - stop_dist ) {
-		pos = joint->pos_cmd - stop_dist;
-	    }
-	}
-        /* set target position and use full velocity */
-        joint->free_pos_cmd = pos;
-        joint->free_vel_lim = joint->vel_limit;
-	/* lock out other jog sources */
-	joint->wheel_jog_active = 1;
-        /* and let it go */
-        joint->free_tp_enable = 1;
-	SET_JOINT_ERROR_FLAG(joint, 0);
-	/* clear joint homed flag(s) if we don't have forward kins.
-	   Otherwise, a transition into coordinated mode will incorrectly
-	   assume the homed position. Do all if they've all been moved
-	   since homing, otherwise just do this one */
-	clearHomes(joint_num);
-    }
-}
+	 IDENTITY: Both forward and inverse kins are available, and they
+	 can used without an initial guess, even if one or more joints
+	 are not homed.  In this case, we apply the forward kins to the
+	 joint->pos_fb to produce carte_pos_fb, and if all axes are homed
+	 we set carte_pos_fb_ok to 1 to indicate that the feedback data
+	 is good.
 
-static void get_pos_cmds(long period)
-{
-    int joint_num, result;
-    emcmot_joint_t *joint;
-    double positions[EMCMOT_MAX_JOINTS];
-/*! \todo Another #if 0 */
-#if 0
-    static int interpolationCounter = 0;
-#endif
-    double old_pos_cmd;
-    double max_dv, tiny_dp, pos_err, vel_req, vel_lim;
+	 BOTH: Both forward and inverse kins are available, but the forward
+	 kins need an initial guess, and/or the kins require all joints to
+	 be homed before they work properly.  Here we must tread carefully.
+	 IF all the joints have been homed, we apply the forward kins to
+	 the joint->pos_fb to produce carte_pos_fb, and set carte_pos_fb_ok
+	 to indicate that the feedback is good.  We use the previous value
+	 of carte_pos_fb as the initial guess.  If all joints have not been
+	 homed, we don't call the kinematics, instead we set carte_pos_fb to
+	 the cartesean coordinates of home, as stored in the global worldHome,
+	 and we set carte_fb_ok to 0 to indicate that the feedback is invalid.
+	 \todo  FIXME - maybe setting to home isn't the right thing to do.  We need
+	 it to be set to home eventually, (right before the first attemt to
+	 run the kins), but that doesn't mean we should say we're at home
+	 when we're not.
 
-    /* used in teleop mode to compute the max accell requested */
-    double accell_mag;
-    int onlimit;
+	 INVERSE_ONLY: Only inverse kinematics are available, forward
+	 kinematics cannot be used.  So we have to fake it, the question is
+	 simply "what way of faking it is best".  In free mode, or if all
+	 axes have not been homed, the feedback position is unknown.  If
+	 we are in teleop or coord mode, or if we are in free mode and all
+	 axes are homed, and haven't been moved since they were homed, then
+	 we set carte_pos_fb to carte_pos_cmd, and set carte_pos_fb_ok to 1.
+	 If we are in free mode, and any joint is not homed, or any joint has
+	 moved since it was homed, we leave cart_pos_fb alone, and set
+	 carte_pos_fb_ok to 0.
 
-    /* copy joint position feedback to local array */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint struct */
-	joint = &joints[joint_num];
-	/* copy coarse command */
-	positions[joint_num] = joint->coarse_pos;
-    }
-    /* if less than a full complement of joints, zero out the rest */
-    while ( joint_num < EMCMOT_MAX_JOINTS ) {
-        positions[joint_num++] = 0.0;
-    }
+	 FORWARD_ONLY: Only forward kinematics are available, inverse kins
+	 cannot be used.  This exists for completeness only, since EMC won't
+	 work without inverse kinematics.
 
+	 */
 
-    /* RUN MOTION CALCULATIONS: */
+	/*! \todo FIXME FIXME FIXME - need to put a rate divider in here, run it
+	 at the traj rate */
 
-    /* run traj planner code depending on the state */
-    switch ( emcmotStatus->motion_state) {
-    case EMCMOT_MOTION_FREE:
-	/* in free mode, each joint is planned independently */
-	/* Each joint has a very simple "trajectory planner".  If the planner
-	   is enabled (free_tp_enable), then it moves toward free_pos_cmd at
-	   free_vel_lim, obeying the joint's accel and velocity limits, and
-	   stopping when it gets there.  If it is not enabled, it stops as
-	   quickly as possible, again obeying the accel limit.  When
-	   disabled, free_pos_cmd is set to the current position. */
-	/* initial value for flag, if needed it will be cleared below */
-	SET_MOTION_INPOS_FLAG(1);
+	double joint_pos[EMCMOT_MAX_JOINTS] = { 0, };
+	int joint_num, result;
+	emcmot_joint_t *joint;
+
+	/* copy joint position feedback to local array */
 	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint struct */
-	    joint = &joints[joint_num];
-	    if(joint->acc_limit > emcmotStatus->acc)
-		joint->acc_limit = emcmotStatus->acc;
-	    //AJ: only need to worry about free mode if joint is active
-	    if (GET_JOINT_ACTIVE_FLAG(joint)) {
-		joint->free_tp_active = 0;
-		/* compute max change in velocity per servo period */
-		max_dv = joint->acc_limit * servo_period;
-		/* compute a tiny position range, to be treated as zero */
-		tiny_dp = max_dv * servo_period * 0.001;
-		/* calculate desired velocity */
-		if (joint->free_tp_enable) {
-		    /* planner enabled, request a velocity that tends to drive
-		       pos_err to zero, but allows for stopping without position
-		       overshoot */
-		    pos_err = joint->free_pos_cmd - joint->pos_cmd;
-		    /* positive and negative errors require some sign flipping to
-		       avoid rtapi_sqrt(negative) */
-		    if (pos_err > tiny_dp) {
-			vel_req =
-			    -max_dv + rtapi_sqrt(2.0 * joint->acc_limit * pos_err +
-			    max_dv * max_dv);
-			/* mark joint active */
-			joint->free_tp_active = 1;
-		    } else if (pos_err < -tiny_dp) {
-			vel_req =
-			    max_dv - rtapi_sqrt(-2.0 * joint->acc_limit * pos_err +
-			    max_dv * max_dv);
-			/* mark joint active */
-			joint->free_tp_active = 1;
-		    } else {
-			/* within 'tiny_dp' of desired pos, no need to move */
-			vel_req = 0.0;
-		    }
-		} else {
-		    /* planner disabled, request zero velocity */
-		    vel_req = 0.0;
-		    /* and set command to present position to avoid movement when
-		       next enabled */
-		    joint->free_pos_cmd = joint->pos_cmd;
+		/* point to joint struct */
+		joint = &joints[joint_num];
+		/* copy feedback */
+		joint_pos[joint_num] = joint->pos_fb;
+		/* check for homed, only if the current joint is active */
+		if (!GET_JOINT_ACTIVE_FLAG(joint)) {
+			/* if joint is not active, don't even look at its limits */
+			continue;
 		}
-		/* if we move at all, clear AT_HOME flag */
-		if (joint->free_tp_active) {
-		    SET_JOINT_AT_HOME_FLAG(joint, 0);
-		}
-                if ( joint->home_state == HOME_IDLE ) {
-                    /* velocity limit = planner limit * global scale factor */
-                    /* the global factor is used for feedrate override */
-                    vel_lim = joint->free_vel_lim * emcmotStatus->net_feed_scale;
-                } else {
-                    /* except if homing, when we ignore FO */
-                    vel_lim = joint->free_vel_lim;
-                }
-		/* must not be greater than the joint physical limit */
-		if (vel_lim > joint->vel_limit) {
-		    vel_lim = joint->vel_limit;
-		}
-		/* limit velocity request */
-		if (vel_req > vel_lim) {
-		    vel_req = vel_lim;
-		} else if (vel_req < -vel_lim) {
-		    vel_req = -vel_lim;
-		}
-		/* ramp velocity toward request at joint accel limit */
-		if (vel_req > joint->vel_cmd + max_dv) {
-		    joint->vel_cmd += max_dv;
-		} else if (vel_req < joint->vel_cmd - max_dv) {
-		    joint->vel_cmd -= max_dv;
-		} else {
-		    joint->vel_cmd = vel_req;
-		}
-		/* check for still moving */
-		if (joint->vel_cmd != 0.0) {
-		    /* yes, mark joint active */
-		    joint->free_tp_active = 1;
-		}
-		/* integrate velocity to get new position */
-		joint->pos_cmd += joint->vel_cmd * servo_period;
-		/* copy to coarse_pos */
-		joint->coarse_pos = joint->pos_cmd;
-		/* update joint status flag and overall status flag */
-		if ( joint->free_tp_active ) {
-		    /* active TP means we're moving, so not in position */
-		    SET_JOINT_INPOS_FLAG(joint, 0);
-		    SET_MOTION_INPOS_FLAG(0);
-		    /* is any limit disabled for this move? */
-		    if ( emcmotStatus->overrideLimitMask ) {
-			emcmotDebug->overriding = 1;
-		    }
-		} else {
-		    SET_JOINT_INPOS_FLAG(joint, 1);
-		    /* joint has stopped, so any outstanding jogs are done */
-		    joint->kb_jog_active = 0;
-		    joint->wheel_jog_active = 0;
-		}
-	    }//if (GET_JOINT_ACTIVE_FLAG(join))
-	}//for loop for joints
-	/* if overriding is true and we're in position, the jog
-	   is complete, and the limits should be re-enabled */
-	if ( (emcmotDebug->overriding ) && ( GET_MOTION_INPOS_FLAG() ) ) {
-	    emcmotStatus->overrideLimitMask = 0;
-	    emcmotDebug->overriding = 0;
 	}
-	/*! \todo FIXME - this should run at the traj rate */
 	switch (kinType) {
 
 	case KINEMATICS_IDENTITY:
-	    emcmotConfig->vtk->kinematicsForward(positions, &emcmotStatus->carte_pos_cmd, &fflags, &iflags);
-	    if (checkAllHomed()) {
-		emcmotStatus->carte_pos_cmd_ok = 1;
-	    } else {
-		emcmotStatus->carte_pos_cmd_ok = 0;
-	    }
-	    break;
+		emcmotConfig->vtk->kinematicsForward(joint_pos,
+				&emcmotStatus->carte_pos_fb, &fflags, &iflags);
+		if (checkAllHomed()) {
+			emcmotStatus->carte_pos_fb_ok = 1;
+		} else {
+			emcmotStatus->carte_pos_fb_ok = 0;
+		}
+		break;
 
 	case KINEMATICS_BOTH:
-	    if (checkAllHomed()) {
-		/* is previous value suitable for use as initial guess? */
-		if (!emcmotStatus->carte_pos_cmd_ok) {
-		    /* no, use home position as initial guess */
-		    emcmotStatus->carte_pos_cmd = emcmotStatus->world_home;
-		}
-		/* calculate Cartesean position command from joint coarse pos cmd */
-		result =
-		    emcmotConfig->vtk->kinematicsForward(positions, &emcmotStatus->carte_pos_cmd, &fflags, &iflags);
-		/* check to make sure kinematics converged */
-		if (result < 0) {
-		    /* error during kinematics calculations */
-		    emcmotStatus->carte_pos_cmd_ok = 0;
+		if (checkAllHomed()) {
+			/* is previous value suitable for use as initial guess? */
+			if (!emcmotStatus->carte_pos_fb_ok) {
+				/* no, use home position as initial guess */
+				emcmotStatus->carte_pos_fb = emcmotStatus->world_home;
+			}
+			/* calculate Cartesean position feedback from joint pos fb */
+			result = emcmotConfig->vtk->kinematicsForward(joint_pos,
+					&emcmotStatus->carte_pos_fb, &fflags, &iflags);
+			/* check to make sure kinematics converged */
+			if (result < 0) {
+				/* error during kinematics calculations */
+				emcmotStatus->carte_pos_fb_ok = 0;
+			} else {
+				/* it worked! */
+				emcmotStatus->carte_pos_fb_ok = 1;
+			}
 		} else {
-		    /* it worked! */
-		    emcmotStatus->carte_pos_cmd_ok = 1;
+			emcmotStatus->carte_pos_fb_ok = 0;
 		}
-	    } else {
-		emcmotStatus->carte_pos_cmd_ok = 0;
-	    }
-	    break;
+		break;
 
 	case KINEMATICS_INVERSE_ONLY:
-	    emcmotStatus->carte_pos_cmd_ok = 0;
-	    break;
+
+		if ((GET_MOTION_COORD_FLAG()) || (GET_MOTION_TELEOP_FLAG())) {
+			/* use Cartesean position command as feedback value */
+			emcmotStatus->carte_pos_fb = emcmotStatus->carte_pos_cmd;
+			emcmotStatus->carte_pos_fb_ok = 1;
+		} else {
+			emcmotStatus->carte_pos_fb_ok = 0;
+		}
+		break;
 
 	default:
-	    emcmotStatus->carte_pos_cmd_ok = 0;
-	    break;
+		emcmotStatus->carte_pos_fb_ok = 0;
+		break;
 	}
-        /* end of FREE mode */
-	break;
-    case EMCMOT_MOTION_COORD:
-	/* check joint 0 to see if the interpolators are empty */
-	while (cubicNeedNextPoint(&(joints[0].cubic))) {
-	    /* they're empty, pull next point(s) off Cartesian planner */
-	    /* run coordinated trajectory planning cycle */
-	    emcmotConfig->vtp->tpRunCycle(emcmotQueue, period);
+}
 
-	    /* gt new commanded traj pos */
-	    emcmotConfig->vtp->tpGetPos(emcmotQueue, &emcmotStatus->carte_pos_cmd);
+static void check_for_faults(void) {
+	int joint_num;
+	emcmot_joint_t *joint;
+	int neg_limit_override, pos_limit_override;
 
-	    /* OUTPUT KINEMATICS - convert to joints in local array */
-	    emcmotConfig->vtk->kinematicsInverse(&emcmotStatus->carte_pos_cmd, positions,
-						 &iflags, &fflags);
-	    /* copy to joint structures and spline them up */
-	    for (joint_num = 0; joint_num < num_joints; joint_num++) {
+	/* check for various global fault conditions */
+	/* only check enable input if running */
+	if (GET_MOTION_ENABLE_FLAG() != 0) {
+		if (*(emcmot_hal_data->enable) == 0) {
+			reportError(_("motion stopped by enable input"));
+			emcmotDebug->enabling = 0;
+		}
+	}
+	/* check for various joint fault conditions */
+	for (joint_num = 0; joint_num < num_joints; joint_num++) {
+		/* point to joint data */
+		joint = &joints[joint_num];
+		/* only check active, enabled axes */
+		if (GET_JOINT_ACTIVE_FLAG(joint) && GET_JOINT_ENABLE_FLAG(joint)) {
+			/* are any limits for this joint overridden? */
+			neg_limit_override = emcmotStatus->overrideLimitMask
+					& (1 << (joint_num * 2));
+			pos_limit_override = emcmotStatus->overrideLimitMask
+					& (2 << (joint_num * 2));
+			/* check for hard limits */
+			if ((GET_JOINT_PHL_FLAG(joint) && !pos_limit_override)
+					|| (GET_JOINT_NHL_FLAG(joint) && !neg_limit_override)) {
+				/* joint is on limit switch, should we trip? */
+				if (GET_JOINT_HOMING_FLAG(joint)) {
+					/* no, ignore limits */
+				} else {
+					/* trip on limits */
+					if (!GET_JOINT_ERROR_FLAG(joint)) {
+						/* report the error just this once */
+						reportError(_("joint %d on limit switch error"),
+								joint_num);
+					}
+					SET_JOINT_ERROR_FLAG(joint, 1);
+					emcmotDebug->enabling = 0;
+				}
+			}
+			/* check for amp fault */
+			if (GET_JOINT_FAULT_FLAG(joint)) {
+				/* joint is faulted, trip */
+				if (!GET_JOINT_ERROR_FLAG(joint)) {
+					/* report the error just this once */
+					reportError(_("joint %d amplifier fault"), joint_num);
+				}
+				SET_JOINT_ERROR_FLAG(joint, 1);
+				emcmotDebug->enabling = 0;
+			}
+			/* check for excessive following error */
+			if (GET_JOINT_FERROR_FLAG(joint)) {
+				if (!GET_JOINT_ERROR_FLAG(joint)) {
+					/* report the error just this once */
+					reportError(_("joint %d following error"), joint_num);
+				}
+				SET_JOINT_ERROR_FLAG(joint, 1);
+				emcmotDebug->enabling = 0;
+			}
+			/* end of if JOINT_ACTIVE_FLAG(joint) */
+		}
+		/* end of check for joint faults loop */
+	}
+}
+
+static void set_operating_mode(void) {
+	int joint_num;
+	emcmot_joint_t *joint;
+
+	/* check for disabling */
+	if (!emcmotDebug->enabling && GET_MOTION_ENABLE_FLAG()) {
+		/* clear out the motion emcmotDebug->queue and interpolators */
+		emcmotConfig->vtp->tpClear(emcmotQueue);
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint data */
+			joint = &joints[joint_num];
+			/* disable free mode planner */
+			joint->free_tp_enable = 0;
+			/* drain coord mode interpolators */
+			cubicDrain(&(joint->cubic));
+			if (GET_JOINT_ACTIVE_FLAG(joint)) {
+				SET_JOINT_ENABLE_FLAG(joint, 0);
+				SET_JOINT_HOMING_FLAG(joint, 0);
+				joint->home_state = HOME_IDLE;
+			}
+			/* don't clear the joint error flag, since that may signify why
+			 we just went into disabled state */
+		}
+		/* reset the trajectory interpolation counter, so that the kinematics
+		 functions called during the disabled state run at the nominal
+		 trajectory rate rather than the servo rate. It's loaded with
+		 emcmotConfig->interpolationRate when it goes to zero. */
+		/*! \todo FIXME - interpolation is still under construction */
+		/*! \todo Another #if 0 */
+#if 0
+		interpolationCounter = 0;
+#endif
+		SET_MOTION_ENABLE_FLAG(0);
+		/* don't clear the motion error flag, since that may signify why we
+		 just went into disabled state */
+	}
+
+	/* check for emcmotDebug->enabling */
+	if (emcmotDebug->enabling && !GET_MOTION_ENABLE_FLAG()) {
+		emcmotConfig->vtp->tpSetPos(emcmotQueue, &emcmotStatus->carte_pos_cmd);
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint data */
+			joint = &joints[joint_num];
+
+			joint->free_pos_cmd = joint->pos_cmd;
+			if (GET_JOINT_ACTIVE_FLAG(joint)) {
+				SET_JOINT_ENABLE_FLAG(joint, 1);
+				SET_JOINT_HOMING_FLAG(joint, 0);
+				joint->home_state = HOME_IDLE;
+			}
+			/* clear any outstanding joint errors when going into enabled
+			 state */
+			SET_JOINT_ERROR_FLAG(joint, 0);
+		}
+		SET_MOTION_ENABLE_FLAG(1);
+		/* clear any outstanding motion errors when going into enabled state */
+		SET_MOTION_ERROR_FLAG(0);
+	}
+
+	/* check for entering teleop mode */
+	if (emcmotDebug->teleoperating && !GET_MOTION_TELEOP_FLAG()) {
+		if (GET_MOTION_INPOS_FLAG()) {
+
+			/* update coordinated emcmotDebug->queue position */
+			emcmotConfig->vtp->tpSetPos(emcmotQueue,
+					&emcmotStatus->carte_pos_cmd);
+
+			/* drain the cubics so they'll synch up */
+			for (joint_num = 0; joint_num < num_joints; joint_num++) {
+				/* point to joint data */
+				joint = &joints[joint_num];
+				cubicDrain(&(joint->cubic));
+			}
+			/* Initialize things to do when starting teleop mode. */
+			ZERO_EMC_POSE(emcmotDebug->teleop_data.currentVel);
+			ZERO_EMC_POSE(emcmotDebug->teleop_data.desiredVel);
+			ZERO_EMC_POSE(emcmotDebug->teleop_data.currentAccel);
+			ZERO_EMC_POSE(emcmotDebug->teleop_data.desiredAccel);
+			SET_MOTION_TELEOP_FLAG(1);
+			SET_MOTION_ERROR_FLAG(0);
+		} else {
+			/* not in position-- don't honor mode change */
+			emcmotDebug->teleoperating = 0;
+		}
+	}
+	/* ROBY Check for entering direct mode */
+	else {
+		if (GET_MOTION_INPOS_FLAG()) {
+			if (!emcmotDebug->teleoperating && GET_MOTION_TELEOP_FLAG()) {
+				SET_MOTION_TELEOP_FLAG(0);
+				if (!emcmotDebug->coordinating) {
+					for (joint_num = 0; joint_num < num_joints; joint_num++) {
+						/* point to joint data */
+						joint = &joints[joint_num];
+						/* update free planner positions */
+						joint->free_pos_cmd = joint->pos_cmd;
+					}
+				}
+			}
+		}
+		/* Check for entering directing mode */
+		/*if (emcmotDebug->directing && !GET_MOTION_DIRECT_FLAG()) {
+				SET_MOTION_DIRECT_FLAG(1);
+				SET_MOTION_ERROR_FLAG(0);
+     	}*/
+		else {
+			/* check for entering coordinated mode */
+			if (emcmotDebug->coordinating && !GET_MOTION_COORD_FLAG()) {
+				if (GET_MOTION_INPOS_FLAG()) {
+					/* preset traj planner to current position */
+					emcmotConfig->vtp->tpSetPos(emcmotQueue,
+							&emcmotStatus->carte_pos_cmd);
+
+					/* drain the cubics so they'll synch up */
+					for (joint_num = 0; joint_num < num_joints; joint_num++) {
+						/* point to joint data */
+						joint = &joints[joint_num];
+						cubicDrain(&(joint->cubic));
+					}
+					/* clear the override limits flags */
+					emcmotDebug->overriding = 0;
+					emcmotStatus->overrideLimitMask = 0;
+					SET_MOTION_COORD_FLAG(1);
+					SET_MOTION_TELEOP_FLAG(0);
+					SET_MOTION_ERROR_FLAG(0);
+				} else {
+					/* not in position-- don't honor mode change */
+					emcmotDebug->coordinating = 0;
+				}
+			}
+
+			/* check entering free space mode */
+			if (!emcmotDebug->coordinating && GET_MOTION_COORD_FLAG()) {
+				if (GET_MOTION_INPOS_FLAG()) {
+					for (joint_num = 0; joint_num < num_joints; joint_num++) {
+						/* point to joint data */
+						joint = &joints[joint_num];
+						/* set joint planner pos cmd to current location */
+						joint->free_pos_cmd = joint->pos_cmd;
+						/* but it can stay disabled until a move is required */
+						joint->free_tp_enable = 0;
+					}
+					SET_MOTION_COORD_FLAG(0);
+					SET_MOTION_TELEOP_FLAG(0);
+					SET_MOTION_ERROR_FLAG(0);
+				} else {
+					/* not in position-- don't honor mode change */
+					emcmotDebug->coordinating = 1;
+				}
+			}
+		}
+	}
+	/*! \todo FIXME - this code is temporary - eventually this function will be
+	 cleaned up and simplified, and 'motion_state' will become the master
+	 for this info, instead of having to gather it from several flags */
+	if (!GET_MOTION_ENABLE_FLAG()) {
+		emcmotStatus->motion_state = EMCMOT_MOTION_DISABLED;
+	} else if (GET_MOTION_TELEOP_FLAG()) {
+		emcmotStatus->motion_state = EMCMOT_MOTION_TELEOP;
+	} else if (GET_MOTION_DIRECT_FLAG()) { //ROBY: Add direct control mode
+		emcmotStatus->motion_state = EMCMOT_MOTION_DIRECT;
+    } else if (GET_MOTION_COORD_FLAG()) {
+		emcmotStatus->motion_state = EMCMOT_MOTION_COORD;
+	} else {
+		emcmotStatus->motion_state = EMCMOT_MOTION_FREE;
+	}
+}
+
+static void handle_jogwheels(void) {
+	int joint_num;
+	emcmot_joint_t *joint;
+	joint_hal_t *joint_data;
+	int new_jog_counts, delta;
+	double distance, pos, stop_dist;
+
+	for (joint_num = 0; joint_num < num_joints; joint_num++) {
+		/* point to joint data */
+		joint_data = &(emcmot_hal_data->joint[joint_num]);
+		joint = &joints[joint_num];
+		if (!GET_JOINT_ACTIVE_FLAG(joint)) {
+			/* if joint is not active, skip it */
+			continue;
+		}
+		/* get counts from jogwheel */
+		new_jog_counts = *(joint_data->jog_counts);
+		delta = new_jog_counts - joint->old_jog_counts;
+		/* save value for next time */
+		joint->old_jog_counts = new_jog_counts;
+		/* initialization complete */
+		if (first_pass) {
+			continue;
+		}
+		/* did the wheel move? */
+		if (delta == 0) {
+			/* no, nothing to do */
+			continue;
+		}
+		/* must be in free mode and enabled */
+		if (GET_MOTION_COORD_FLAG()) {
+			continue;
+		}
+		if (!GET_MOTION_ENABLE_FLAG()) {
+			continue;
+		}
+		/* the jogwheel input for this joint must be enabled */
+		if (*(joint_data->jog_enable) == 0) {
+			continue;
+		}
+		/* must not be homing */
+		if (emcmotStatus->homing_active) {
+			continue;
+		}
+		/* must not be doing a keyboard jog */
+		if (joint->kb_jog_active) {
+			continue;
+		}
+		if (emcmotStatus->net_feed_scale < 0.0001) {
+			/* don't jog if feedhold is on or if feed override is zero */
+			break;
+		}
+		/* calculate distance to jog */
+		distance = delta * *(joint_data->jog_scale);
+		/* check for joint already on hard limit */
+		if (distance > 0.0 && GET_JOINT_PHL_FLAG(joint)) {
+			continue;
+		}
+		if (distance < 0.0 && GET_JOINT_NHL_FLAG(joint)) {
+			continue;
+		}
+		/* calc target position for jog */
+		pos = joint->free_pos_cmd + distance;
+		/* don't jog past limits */
+		refresh_jog_limits(joint);
+		if (pos > joint->max_jog_limit) {
+			continue;
+		}
+		if (pos < joint->min_jog_limit) {
+			continue;
+		}
+		/* The default is to move exactly as far as the wheel commands,
+		 even if that move takes much longer than the wheel movement
+		 that commanded it.  Some folks prefer that the move stop as
+		 soon as the wheel does, even if that means not moving the
+		 commanded distance.  Velocity mode is for those folks.  If
+		 the command is faster than the machine can track, excess
+		 command is simply dropped. */
+		if (*(joint_data->jog_vel_mode)) {
+			double v = joint->vel_limit * emcmotStatus->net_feed_scale;
+			/* compute stopping distance at max speed */
+			stop_dist = v * v / (2 * joint->acc_limit);
+			/* if commanded position leads the actual position by more
+			 than stopping distance, discard excess command */
+			if (pos > joint->pos_cmd + stop_dist) {
+				pos = joint->pos_cmd + stop_dist;
+			} else if (pos < joint->pos_cmd - stop_dist) {
+				pos = joint->pos_cmd - stop_dist;
+			}
+		}
+		/* set target position and use full velocity */
+		joint->free_pos_cmd = pos;
+		joint->free_vel_lim = joint->vel_limit;
+		/* lock out other jog sources */
+		joint->wheel_jog_active = 1;
+		/* and let it go */
+		joint->free_tp_enable = 1;
+		SET_JOINT_ERROR_FLAG(joint, 0);
+		/* clear joint homed flag(s) if we don't have forward kins.
+		 Otherwise, a transition into coordinated mode will incorrectly
+		 assume the homed position. Do all if they've all been moved
+		 since homing, otherwise just do this one */
+		clearHomes(joint_num);
+	}
+}
+
+static void get_pos_cmds(long period) {
+	int joint_num, result;
+	emcmot_joint_t *joint;
+	double positions[EMCMOT_MAX_JOINTS];
+	/*! \todo Another #if 0 */
+#if 0
+	static int interpolationCounter = 0;
+#endif
+	double old_pos_cmd;
+	double max_dv, tiny_dp, pos_err, vel_req, vel_lim;
+
+	/* used in teleop mode to compute the max accell requested */
+	double accell_mag;
+	int onlimit;
+
+	/* copy joint position feedback to local array */
+	for (joint_num = 0; joint_num < num_joints; joint_num++) {
 		/* point to joint struct */
 		joint = &joints[joint_num];
-		joint->coarse_pos = positions[joint_num];
-		/* spline joints up-- note that we may be adding points
-		   that fail soft limits, but we'll abort at the end of
-		   this cycle so it doesn't really matter */
-		cubicAddPoint(&(joint->cubic), joint->coarse_pos);
-	    }
-	    /* END OF OUTPUT KINS */
+		/* copy coarse command */
+		positions[joint_num] = joint->coarse_pos;
 	}
-	/* there is data in the interpolators */
-	/* run interpolation */
+	/* if less than a full complement of joints, zero out the rest */
+	while (joint_num < EMCMOT_MAX_JOINTS) {
+		positions[joint_num++] = 0.0;
+	}
+
+	/* RUN MOTION CALCULATIONS: */
+
+	/* run traj planner code depending on the state */
+	switch (emcmotStatus->motion_state) {
+	case EMCMOT_MOTION_FREE:
+		/* in free mode, each joint is planned independently */
+		/* Each joint has a very simple "trajectory planner".  If the planner
+		 is enabled (free_tp_enable), then it moves toward free_pos_cmd at
+		 free_vel_lim, obeying the joint's accel and velocity limits, and
+		 stopping when it gets there.  If it is not enabled, it stops as
+		 quickly as possible, again obeying the accel limit.  When
+		 disabled, free_pos_cmd is set to the current position. */
+		/* initial value for flag, if needed it will be cleared below */
+		SET_MOTION_INPOS_FLAG(1);
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint struct */
+			joint = &joints[joint_num];
+			if (joint->acc_limit > emcmotStatus->acc)
+				joint->acc_limit = emcmotStatus->acc;
+			//AJ: only need to worry about free mode if joint is active
+			if (GET_JOINT_ACTIVE_FLAG(joint)) {
+				joint->free_tp_active = 0;
+				/* compute max change in velocity per servo period */
+				max_dv = joint->acc_limit * servo_period;
+				/* compute a tiny position range, to be treated as zero */
+				tiny_dp = max_dv * servo_period * 0.001;
+				/* calculate desired velocity */
+				if (joint->free_tp_enable) {
+					/* planner enabled, request a velocity that tends to drive
+					 pos_err to zero, but allows for stopping without position
+					 overshoot */
+					pos_err = joint->free_pos_cmd - joint->pos_cmd;
+					/* positive and negative errors require some sign flipping to
+					 avoid rtapi_sqrt(negative) */
+					if (pos_err > tiny_dp) {
+						vel_req = -max_dv
+								+ rtapi_sqrt(
+										2.0 * joint->acc_limit * pos_err
+												+ max_dv * max_dv);
+						/* mark joint active */
+						joint->free_tp_active = 1;
+					} else if (pos_err < -tiny_dp) {
+						vel_req = max_dv
+								- rtapi_sqrt(
+										-2.0 * joint->acc_limit * pos_err
+												+ max_dv * max_dv);
+						/* mark joint active */
+						joint->free_tp_active = 1;
+					} else {
+						/* within 'tiny_dp' of desired pos, no need to move */
+						vel_req = 0.0;
+					}
+				} else {
+					/* planner disabled, request zero velocity */
+					vel_req = 0.0;
+					/* and set command to present position to avoid movement when
+					 next enabled */
+					joint->free_pos_cmd = joint->pos_cmd;
+				}
+				/* if we move at all, clear AT_HOME flag */
+				if (joint->free_tp_active) {
+					SET_JOINT_AT_HOME_FLAG(joint, 0);
+				}
+				if (joint->home_state == HOME_IDLE) {
+					/* velocity limit = planner limit * global scale factor */
+					/* the global factor is used for feedrate override */
+					vel_lim = joint->free_vel_lim
+							* emcmotStatus->net_feed_scale;
+				} else {
+					/* except if homing, when we ignore FO */
+					vel_lim = joint->free_vel_lim;
+				}
+				/* must not be greater than the joint physical limit */
+				if (vel_lim > joint->vel_limit) {
+					vel_lim = joint->vel_limit;
+				}
+				/* limit velocity request */
+				if (vel_req > vel_lim) {
+					vel_req = vel_lim;
+				} else if (vel_req < -vel_lim) {
+					vel_req = -vel_lim;
+				}
+				/* ramp velocity toward request at joint accel limit */
+				if (vel_req > joint->vel_cmd + max_dv) {
+					joint->vel_cmd += max_dv;
+				} else if (vel_req < joint->vel_cmd - max_dv) {
+					joint->vel_cmd -= max_dv;
+				} else {
+					joint->vel_cmd = vel_req;
+				}
+				/* check for still moving */
+				if (joint->vel_cmd != 0.0) {
+					/* yes, mark joint active */
+					joint->free_tp_active = 1;
+				}
+				/* integrate velocity to get new position */
+				joint->pos_cmd += joint->vel_cmd * servo_period;
+				/* copy to coarse_pos */
+				joint->coarse_pos = joint->pos_cmd;
+				/* update joint status flag and overall status flag */
+				if (joint->free_tp_active) {
+					/* active TP means we're moving, so not in position */
+					SET_JOINT_INPOS_FLAG(joint, 0);
+					SET_MOTION_INPOS_FLAG(0);
+					/* is any limit disabled for this move? */
+					if (emcmotStatus->overrideLimitMask) {
+						emcmotDebug->overriding = 1;
+					}
+				} else {
+					SET_JOINT_INPOS_FLAG(joint, 1);
+					/* joint has stopped, so any outstanding jogs are done */
+					joint->kb_jog_active = 0;
+					joint->wheel_jog_active = 0;
+				}
+			} //if (GET_JOINT_ACTIVE_FLAG(join))
+		} //for loop for joints
+		/* if overriding is true and we're in position, the jog
+		 is complete, and the limits should be re-enabled */
+		if ((emcmotDebug->overriding) && (GET_MOTION_INPOS_FLAG())) {
+			emcmotStatus->overrideLimitMask = 0;
+			emcmotDebug->overriding = 0;
+		}
+		/*! \todo FIXME - this should run at the traj rate */
+		switch (kinType) {
+
+		case KINEMATICS_IDENTITY:
+			emcmotConfig->vtk->kinematicsForward(positions,
+					&emcmotStatus->carte_pos_cmd, &fflags, &iflags);
+			if (checkAllHomed()) {
+				emcmotStatus->carte_pos_cmd_ok = 1;
+			} else {
+				emcmotStatus->carte_pos_cmd_ok = 0;
+			}
+			break;
+
+		case KINEMATICS_BOTH:
+			if (checkAllHomed()) {
+				/* is previous value suitable for use as initial guess? */
+				if (!emcmotStatus->carte_pos_cmd_ok) {
+					/* no, use home position as initial guess */
+					emcmotStatus->carte_pos_cmd = emcmotStatus->world_home;
+				}
+				/* calculate Cartesean position command from joint coarse pos cmd */
+				result = emcmotConfig->vtk->kinematicsForward(positions,
+						&emcmotStatus->carte_pos_cmd, &fflags, &iflags);
+				/* check to make sure kinematics converged */
+				if (result < 0) {
+					/* error during kinematics calculations */
+					emcmotStatus->carte_pos_cmd_ok = 0;
+				} else {
+					/* it worked! */
+					emcmotStatus->carte_pos_cmd_ok = 1;
+				}
+			} else {
+				emcmotStatus->carte_pos_cmd_ok = 0;
+			}
+			break;
+
+		case KINEMATICS_INVERSE_ONLY:
+			emcmotStatus->carte_pos_cmd_ok = 0;
+			break;
+
+		default:
+			emcmotStatus->carte_pos_cmd_ok = 0;
+			break;
+		}
+		/* end of FREE mode */
+		break;
+	case EMCMOT_MOTION_COORD:
+		/* check joint 0 to see if the interpolators are empty */
+		while (cubicNeedNextPoint(&(joints[0].cubic))) {
+			/* they're empty, pull next point(s) off Cartesian planner */
+			/* run coordinated trajectory planning cycle */
+			emcmotConfig->vtp->tpRunCycle(emcmotQueue, period);
+
+			/* gt new commanded traj pos */
+			emcmotConfig->vtp->tpGetPos(emcmotQueue,
+					&emcmotStatus->carte_pos_cmd);
+			/*
+			double dt = 0.001;
+			static double th = 0;
+			static double rad = 1;
+
+			static double currentPosX = 0.001;
+			static double currentPosY = 0.0;
+			//ROBY: inject random shit. After IK, this is coarse_pos
+			if (emcmotStatus->carte_pos_cmd.tran.x > 0.001) {
+				//currentPosX = rad*cos(th);
+				if (tt > 0.5) {
+					jj++;
+					tt = 0;
+					if (jj > 240) {
+						jj = 0;
+					}
+				}
+ 		        currentPosX = (xcoords[jj] + tt/0.5*(xcoords[jj+1]-xcoords[jj]));
+				emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
+				//currentPosY = rad*sin(th);
+				currentPosY = (ycoords[jj] + tt/0.5*(ycoords[jj+1]-ycoords[jj]));
+				emcmotStatus->carte_pos_cmd.tran.y = currentPosY;
+				tt += 0.001;
+				//emcmotStatus->requested_vel = 100;
+				//emcmotStatus->
+				//emcmotQueue->done = 0;
+				//emcmotQueue->currentPos.tran.x = 0.01;
+				//emcmotQueue->
+			}
+			*/
+				//th += (2*3.14*rad/2)*dt;
+//				if (currentPosX < 0.5) {
+//					currentPosX += 0.5 * 200 * dt * dt;
+//					currentPosX = rad*cos(th);
+//					emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
+//				} else if (currentPosX < 1.5) {
+//					//currentPosX += 0.1 * dt;
+//
+//					emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
+//				} else {
+//					currentPosY += 0.1 * dt;
+//					emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
+//					emcmotStatus->carte_pos_cmd.tran.y = currentPosY;
+//				}
+//			}
+
+			//emcmotStatus->carte_pos_cmd.tran.x +=
+			//emcmotStatus->carte_pos_cmd.tran.x += -0.05 + (rand() % 100)/1000.0;
+			//}
+
+			/* OUTPUT KINEMATICS - convert to joints in local array */
+			emcmotConfig->vtk->kinematicsInverse(&emcmotStatus->carte_pos_cmd,
+					positions, &iflags, &fflags);
+			/* copy to joint structures and spline them up */
+			for (joint_num = 0; joint_num < num_joints; joint_num++) {
+				/* point to joint struct */
+				joint = &joints[joint_num];
+				//joint->coarse_pos = positions[joint_num];
+				joint->coarse_pos = positions[joint_num];
+				/* spline joints up-- note that we may be adding points
+				 that fail soft limits, but we'll abort at the end of
+				 this cycle so it doesn't really matter */
+				cubicAddPoint(&(joint->cubic), joint->coarse_pos);
+			}
+			/* END OF OUTPUT KINS */
+		}
+		/* there is data in the interpolators */
+		/* run interpolation */
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint struct */
+			joint = &joints[joint_num];
+			/* save old command */
+			old_pos_cmd = joint->pos_cmd;
+
+			//ROBY: Feed points in here
+			/* interpolate to get new one */
+			//float randnum = rand()%2/50.f;
+			joint->pos_cmd = cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
+			//log_joint_pos[joint_num] = *joint_data->joint_pos_cmd;
+			//joint->pos_cmd = joint->coarse_pos;
+			joint->vel_cmd = (joint->pos_cmd - old_pos_cmd) * servo_freq;
+
+		}
+		/* report motion status */
+		SET_MOTION_INPOS_FLAG(0);
+		if (emcmotConfig->vtp->tpIsDone(emcmotQueue)) {
+			SET_MOTION_INPOS_FLAG(1);
+		}
+		break;
+	case EMCMOT_MOTION_TELEOP:
+
+		/* first the desired Accel's are computed based on
+		 desired Velocity, current velocity and period */
+		emcmotDebug->teleop_data.desiredAccel.tran.x =
+				(emcmotDebug->teleop_data.desiredVel.tran.x
+						- emcmotDebug->teleop_data.currentVel.tran.x)
+						/ servo_period;
+		emcmotDebug->teleop_data.desiredAccel.tran.y =
+				(emcmotDebug->teleop_data.desiredVel.tran.y
+						- emcmotDebug->teleop_data.currentVel.tran.y)
+						/ servo_period;
+		emcmotDebug->teleop_data.desiredAccel.tran.z =
+				(emcmotDebug->teleop_data.desiredVel.tran.z
+						- emcmotDebug->teleop_data.currentVel.tran.z)
+						/ servo_period;
+
+		/* a Carthesian Accel is computed */
+		pmCartMag(&emcmotDebug->teleop_data.desiredAccel.tran, &accell_mag);
+
+		/* then the accells for the rotary axes */
+		emcmotDebug->teleop_data.desiredAccel.a =
+				(emcmotDebug->teleop_data.desiredVel.a
+						- emcmotDebug->teleop_data.currentVel.a) / servo_period;
+		emcmotDebug->teleop_data.desiredAccel.b =
+				(emcmotDebug->teleop_data.desiredVel.b
+						- emcmotDebug->teleop_data.currentVel.b) / servo_period;
+		emcmotDebug->teleop_data.desiredAccel.c =
+				(emcmotDebug->teleop_data.desiredVel.c
+						- emcmotDebug->teleop_data.currentVel.c) / servo_period;
+		if (rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.a) > accell_mag) {
+			accell_mag = rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.a);
+		}
+		if (rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.b) > accell_mag) {
+			accell_mag = rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.b);
+		}
+		if (rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.c) > accell_mag) {
+			accell_mag = rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.c);
+		}
+
+		/* accell_mag should now hold the max accell */
+
+		if (accell_mag > emcmotStatus->acc) {
+			/* if accell_mag is too great, all need resizing */
+			pmCartScalMult(&emcmotDebug->teleop_data.desiredAccel.tran,
+					emcmotStatus->acc / accell_mag,
+					&emcmotDebug->teleop_data.currentAccel.tran);
+			emcmotDebug->teleop_data.currentAccel.a =
+					emcmotDebug->teleop_data.desiredAccel.a * emcmotStatus->acc
+							/ accell_mag;
+			emcmotDebug->teleop_data.currentAccel.b =
+					emcmotDebug->teleop_data.desiredAccel.b * emcmotStatus->acc
+							/ accell_mag;
+			emcmotDebug->teleop_data.currentAccel.c =
+					emcmotDebug->teleop_data.desiredAccel.c * emcmotStatus->acc
+							/ accell_mag;
+			emcmotDebug->teleop_data.currentVel.tran.x +=
+					emcmotDebug->teleop_data.currentAccel.tran.x * servo_period;
+			emcmotDebug->teleop_data.currentVel.tran.y +=
+					emcmotDebug->teleop_data.currentAccel.tran.y * servo_period;
+			emcmotDebug->teleop_data.currentVel.tran.z +=
+					emcmotDebug->teleop_data.currentAccel.tran.z * servo_period;
+			emcmotDebug->teleop_data.currentVel.a +=
+					emcmotDebug->teleop_data.currentAccel.a * servo_period;
+			emcmotDebug->teleop_data.currentVel.b +=
+					emcmotDebug->teleop_data.currentAccel.b * servo_period;
+			emcmotDebug->teleop_data.currentVel.c +=
+					emcmotDebug->teleop_data.currentAccel.c * servo_period;
+		} else {
+			/* if accell_mag is not greater, the computed accell's stay as is */
+			emcmotDebug->teleop_data.currentAccel =
+					emcmotDebug->teleop_data.desiredAccel;
+			emcmotDebug->teleop_data.currentVel =
+					emcmotDebug->teleop_data.desiredVel;
+		}
+
+		/* based on curent position, current vel and period,
+		 the next position is computed */
+		emcmotStatus->carte_pos_cmd.tran.x +=
+				emcmotDebug->teleop_data.currentVel.tran.x * servo_period;
+		emcmotStatus->carte_pos_cmd.tran.y +=
+				emcmotDebug->teleop_data.currentVel.tran.y * servo_period;
+		emcmotStatus->carte_pos_cmd.tran.z +=
+				emcmotDebug->teleop_data.currentVel.tran.z * servo_period;
+		emcmotStatus->carte_pos_cmd.a += emcmotDebug->teleop_data.currentVel.a
+				* servo_period;
+		emcmotStatus->carte_pos_cmd.b += emcmotDebug->teleop_data.currentVel.b
+				* servo_period;
+		emcmotStatus->carte_pos_cmd.c += emcmotDebug->teleop_data.currentVel.c
+				* servo_period;
+
+		/* the next position then gets run through the inverse kins,
+		 to compute the next positions of the joints */
+
+		/* OUTPUT KINEMATICS - convert to joints in local array */
+		emcmotConfig->vtk->kinematicsInverse(&emcmotStatus->carte_pos_cmd,
+				positions, &iflags, &fflags);
+		/* copy to joint structures and spline them up */
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint struct */
+			joint = &joints[joint_num];
+			joint->coarse_pos = positions[joint_num];
+			/* spline joints up-- note that we may be adding points
+			 that fail soft limits, but we'll abort at the end of
+			 this cycle so it doesn't really matter */
+			cubicAddPoint(&(joint->cubic), joint->coarse_pos);
+		}
+		/* END OF OUTPUT KINS */
+
+		/* there is data in the interpolators */
+		/* run interpolation */
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint struct */
+			joint = &joints[joint_num];
+			/* save old command */
+			old_pos_cmd = joint->pos_cmd;
+			/* interpolate to get new one */
+			joint->pos_cmd = cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
+			//joint->pos_cmd = joint->coarse_pos+(rand()%3/300.f);//cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
+			joint->vel_cmd = (joint->pos_cmd - old_pos_cmd) * servo_freq;
+		}
+
+		/* end of teleop mode */
+		break;
+
+	case EMCMOT_MOTION_DISABLED:
+		/* set position commands to match feedbacks, this avoids
+		 disturbances and/or following errors when enabling */
+		emcmotStatus->carte_pos_cmd = emcmotStatus->carte_pos_fb;
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+			/* point to joint struct */
+			joint = &joints[joint_num];
+			/* save old command */
+			joint->pos_cmd = joint->pos_fb;
+			/* set joint velocity to zero */
+			joint->vel_cmd = 0.0;
+		}
+
+		break;
+	//ROBY: Direct control from SP
+	case EMCMOT_MOTION_DIRECT:
+		for (joint_num = 0; joint_num < num_joints; joint_num++) {
+					/* point to joint struct */
+					joint = &joints[joint_num];
+					/* save old command */
+					joint->pos_cmd = joint->pos_fb;
+					/* set joint velocity to zero */
+					joint->vel_cmd = 0.0;
+			}
+		break;
+
+	default:
+		break;
+	}
+	/* check command against soft limits */
+	/* This is a backup check, it should be impossible to command
+	 a move outside the soft limits.  However there is at least
+	 one case that isn't caught upstream: if an arc has both
+	 endpoints inside the limits, but the curve extends outside,
+	 the upstream checks will pass it.
+	 */
+	onlimit = 0;
 	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint struct */
-	    joint = &joints[joint_num];
-	    /* save old command */
-	    old_pos_cmd = joint->pos_cmd;
-	    /* interpolate to get new one */
-	    joint->pos_cmd = cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
-	    joint->vel_cmd = (joint->pos_cmd - old_pos_cmd) * servo_freq;
+		/* point to joint data */
+		joint = &joints[joint_num];
+		/* skip inactive or unhomed axes */
+		if (GET_JOINT_ACTIVE_FLAG(joint) && GET_JOINT_HOMED_FLAG(joint)) {
+			/* check for soft limits */
+			if (joint->pos_cmd > joint->max_pos_limit) {
+				onlimit = 1;
+				if (!emcmotStatus->on_soft_limit)
+					reportError(_("Exceeded positive soft limit on joint %d"),
+							joint_num);
+			}
+			if (joint->pos_cmd < joint->min_pos_limit) {
+				onlimit = 1;
+				if (!emcmotStatus->on_soft_limit)
+					reportError(_("Exceeded negative soft limit on joint %d"),
+							joint_num);
+			}
+		}
 	}
-	/* report motion status */
-	SET_MOTION_INPOS_FLAG(0);
-	if (emcmotConfig->vtp->tpIsDone(emcmotQueue)) {
-	    SET_MOTION_INPOS_FLAG(1);
-	}
-	break;
-    case EMCMOT_MOTION_TELEOP:
-
-	/* first the desired Accel's are computed based on
-	    desired Velocity, current velocity and period */
-	emcmotDebug->teleop_data.desiredAccel.tran.x =
-	    (emcmotDebug->teleop_data.desiredVel.tran.x -
-	    emcmotDebug->teleop_data.currentVel.tran.x) /
-	    servo_period;
-	emcmotDebug->teleop_data.desiredAccel.tran.y =
-	    (emcmotDebug->teleop_data.desiredVel.tran.y -
-	    emcmotDebug->teleop_data.currentVel.tran.y) /
-	    servo_period;
-	emcmotDebug->teleop_data.desiredAccel.tran.z =
-	    (emcmotDebug->teleop_data.desiredVel.tran.z -
-	    emcmotDebug->teleop_data.currentVel.tran.z) /
-	    servo_period;
-
-	/* a Carthesian Accel is computed */
-	pmCartMag(&emcmotDebug->teleop_data.desiredAccel.tran,
-	    &accell_mag);
-
-	/* then the accells for the rotary axes */
-	emcmotDebug->teleop_data.desiredAccel.a =
-	    (emcmotDebug->teleop_data.desiredVel.a -
-	    emcmotDebug->teleop_data.currentVel.a) /
-	    servo_period;
-	emcmotDebug->teleop_data.desiredAccel.b =
-	    (emcmotDebug->teleop_data.desiredVel.b -
-	    emcmotDebug->teleop_data.currentVel.b) /
-	    servo_period;
-	emcmotDebug->teleop_data.desiredAccel.c =
-	    (emcmotDebug->teleop_data.desiredVel.c -
-	    emcmotDebug->teleop_data.currentVel.c) /
-	    servo_period;
-	if (rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.a) > accell_mag) {
-	    accell_mag = rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.a);
-	}
-	if (rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.b) > accell_mag) {
-	    accell_mag = rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.b);
-	}
-	if (rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.c) > accell_mag) {
-	    accell_mag = rtapi_fabs(emcmotDebug->teleop_data.desiredAccel.c);
-	}
-	
-	/* accell_mag should now hold the max accell */
-	
-	if (accell_mag > emcmotStatus->acc) {
-	    /* if accell_mag is too great, all need resizing */
-	    pmCartScalMult(&emcmotDebug->teleop_data.desiredAccel.tran, 
-		emcmotStatus->acc / accell_mag,
-		&emcmotDebug->teleop_data.currentAccel.tran);
-	    emcmotDebug->teleop_data.currentAccel.a =
-		emcmotDebug->teleop_data.desiredAccel.a *
-		emcmotStatus->acc / accell_mag;
-	    emcmotDebug->teleop_data.currentAccel.b =
-		emcmotDebug->teleop_data.desiredAccel.b *
-		emcmotStatus->acc / accell_mag;
-	    emcmotDebug->teleop_data.currentAccel.c =
-		emcmotDebug->teleop_data.desiredAccel.c *
-		emcmotStatus->acc / accell_mag;
-	    emcmotDebug->teleop_data.currentVel.tran.x +=
-		emcmotDebug->teleop_data.currentAccel.tran.x *
-		servo_period;
-	    emcmotDebug->teleop_data.currentVel.tran.y +=
-		emcmotDebug->teleop_data.currentAccel.tran.y *
-		servo_period;
-	    emcmotDebug->teleop_data.currentVel.tran.z +=
-		emcmotDebug->teleop_data.currentAccel.tran.z *
-		servo_period;
-	    emcmotDebug->teleop_data.currentVel.a +=
-		emcmotDebug->teleop_data.currentAccel.a *
-		servo_period;
-	    emcmotDebug->teleop_data.currentVel.b +=
-		emcmotDebug->teleop_data.currentAccel.b *
-		servo_period;
-	    emcmotDebug->teleop_data.currentVel.c +=
-		emcmotDebug->teleop_data.currentAccel.c *
-		servo_period;
+	if (onlimit) {
+		if (!emcmotStatus->on_soft_limit) {
+			/* just hit the limit */
+			SET_MOTION_ERROR_FLAG(1);
+			emcmotStatus->on_soft_limit = 1;
+		}
 	} else {
-	    /* if accell_mag is not greater, the computed accell's stay as is */
-	    emcmotDebug->teleop_data.currentAccel =
-		emcmotDebug->teleop_data.desiredAccel;
-	    emcmotDebug->teleop_data.currentVel =
-		emcmotDebug->teleop_data.desiredVel;
+		emcmotStatus->on_soft_limit = 0;
 	}
-
-
-	/* based on curent position, current vel and period, 
-	   the next position is computed */
-	emcmotStatus->carte_pos_cmd.tran.x +=
-	    emcmotDebug->teleop_data.currentVel.tran.x *
-	    servo_period;
-	emcmotStatus->carte_pos_cmd.tran.y +=
-	    emcmotDebug->teleop_data.currentVel.tran.y *
-	    servo_period;
-	emcmotStatus->carte_pos_cmd.tran.z +=
-	    emcmotDebug->teleop_data.currentVel.tran.z *
-	    servo_period;
-	emcmotStatus->carte_pos_cmd.a +=
-	    emcmotDebug->teleop_data.currentVel.a *
-	    servo_period;
-	emcmotStatus->carte_pos_cmd.b +=
-	    emcmotDebug->teleop_data.currentVel.b *
-	    servo_period;
-	emcmotStatus->carte_pos_cmd.c +=
-	    emcmotDebug->teleop_data.currentVel.c *
-	    servo_period;
-
-	/* the next position then gets run through the inverse kins,
-	    to compute the next positions of the joints */
-
-	/* OUTPUT KINEMATICS - convert to joints in local array */
-	emcmotConfig->vtk->kinematicsInverse(&emcmotStatus->carte_pos_cmd, positions,
-	    &iflags, &fflags);
-	/* copy to joint structures and spline them up */
-	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint struct */
-	    joint = &joints[joint_num];
-	    joint->coarse_pos = positions[joint_num];
-	    /* spline joints up-- note that we may be adding points
-		   that fail soft limits, but we'll abort at the end of
-		   this cycle so it doesn't really matter */
-	    cubicAddPoint(&(joint->cubic), joint->coarse_pos);
-	}
-	/* END OF OUTPUT KINS */
-
-	/* there is data in the interpolators */
-	/* run interpolation */
-	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint struct */
-	    joint = &joints[joint_num];
-	    /* save old command */
-	    old_pos_cmd = joint->pos_cmd;
-	    /* interpolate to get new one */
-	    joint->pos_cmd = cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
-	    joint->vel_cmd = (joint->pos_cmd - old_pos_cmd) * servo_freq;
-	}
-
-	/* end of teleop mode */
-	break;
-
-    case EMCMOT_MOTION_DISABLED:
-	/* set position commands to match feedbacks, this avoids
-	   disturbances and/or following errors when enabling */
-	emcmotStatus->carte_pos_cmd = emcmotStatus->carte_pos_fb;
-	for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	    /* point to joint struct */
-	    joint = &joints[joint_num];
-	    /* save old command */
-	    joint->pos_cmd = joint->pos_fb;
-	    /* set joint velocity to zero */
-	    joint->vel_cmd = 0.0;
-	}
-	
-	break;
-    default:
-	break;
-    }
-    /* check command against soft limits */
-    /* This is a backup check, it should be impossible to command
-	a move outside the soft limits.  However there is at least
-	one case that isn't caught upstream: if an arc has both
-	endpoints inside the limits, but the curve extends outside,
-	the upstream checks will pass it.
-    */
-    onlimit = 0;
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint data */
-	joint = &joints[joint_num];
-	/* skip inactive or unhomed axes */
-	if (GET_JOINT_ACTIVE_FLAG(joint) && GET_JOINT_HOMED_FLAG(joint)) {
-	    /* check for soft limits */
-	    if (joint->pos_cmd > joint->max_pos_limit) {
-		onlimit = 1;
-                if (!emcmotStatus->on_soft_limit)
-                    reportError(_("Exceeded positive soft limit on joint %d"), joint_num);
-	    }
-	    if (joint->pos_cmd < joint->min_pos_limit) {
-		onlimit = 1;
-                if (!emcmotStatus->on_soft_limit)
-                    reportError(_("Exceeded negative soft limit on joint %d"), joint_num);
-	    }
-	}
-    }
-    if ( onlimit ) {
-	if ( ! emcmotStatus->on_soft_limit ) {
-	    /* just hit the limit */
-	    SET_MOTION_ERROR_FLAG(1);
-	    emcmotStatus->on_soft_limit = 1;
-	}
-    } else {
-	emcmotStatus->on_soft_limit = 0;
-    }
 }
 
 /* NOTES:  These notes are just my understanding of how things work.
 
-There are seven sets of position information.
+ There are seven sets of position information.
 
-1) emcmotStatus->carte_pos_cmd
-2) emcmotStatus->joints[n].coarse_pos
-3) emcmotStatus->joints[n].pos_cmd
-4) emcmotStatus->joints[n].motor_pos_cmd
-5) emcmotStatus->joints[n].motor_pos_fb
-6) emcmotStatus->joints[n].pos_fb
-7) emcmotStatus->carte_pos_fb
+ 1) emcmotStatus->carte_pos_cmd
+ 2) emcmotStatus->joints[n].coarse_pos
+ 3) emcmotStatus->joints[n].pos_cmd
+ 4) emcmotStatus->joints[n].motor_pos_cmd
+ 5) emcmotStatus->joints[n].motor_pos_fb
+ 6) emcmotStatus->joints[n].pos_fb
+ 7) emcmotStatus->carte_pos_fb
 
-Their exact contents and meaning are as follows:
+ Their exact contents and meaning are as follows:
 
-1) This is the desired position, in Cartesean coordinates.  It is
-   updated at the traj rate, not the servo rate.
-   In coord mode, it is determined by the traj planner
-   In teleop mode, it is determined by the traj planner?
-   In free mode, it is not used, since free mode motion takes
-     place in joint space, not cartesean space.  It may be
-     displayed by the GUI however, so it is updated by
-     applying forward kins to (2), unless forward kins are
-     not available, in which case it is copied from (7).
+ 1) This is the desired position, in Cartesean coordinates.  It is
+ updated at the traj rate, not the servo rate.
+ In coord mode, it is determined by the traj planner
+ In teleop mode, it is determined by the traj planner?
+ In free mode, it is not used, since free mode motion takes
+ place in joint space, not cartesean space.  It may be
+ displayed by the GUI however, so it is updated by
+ applying forward kins to (2), unless forward kins are
+ not available, in which case it is copied from (7).
 
-2) This is the desired position, in joint coordinates, but
-   before interpolation.  It is updated at the traj rate, not
-   the servo rate..
-   In coord mode, it is generated by applying inverse kins to (1)
-   In teleop mode, it is generated by applying inverse kins to (1)
-   In free mode, it is not used, since the free mode planner generates
-     a new (3) position every servo period without interpolation.
-     However, it is used indirectly by GUIs, so it is copied from (3).
+ 2) This is the desired position, in joint coordinates, but
+ before interpolation.  It is updated at the traj rate, not
+ the servo rate..
+ In coord mode, it is generated by applying inverse kins to (1)
+ In teleop mode, it is generated by applying inverse kins to (1)
+ In free mode, it is not used, since the free mode planner generates
+ a new (3) position every servo period without interpolation.
+ However, it is used indirectly by GUIs, so it is copied from (3).
 
-3) This is the desired position, in joint coords, after interpolation.
-   A new set of these coords is generated every servo period.
-   In coord mode, it is generated from (2) by the interpolator.
-   In teleop mode, it is generated from (2) by the interpolator.
-   In free mode, it is generated by the simple free mode traj planner.
+ 3) This is the desired position, in joint coords, after interpolation.
+ A new set of these coords is generated every servo period.
+ In coord mode, it is generated from (2) by the interpolator.
+ In teleop mode, it is generated from (2) by the interpolator.
+ In free mode, it is generated by the simple free mode traj planner.
 
-4) This is the desired position, in motor coords.  Motor coords are
-   generated by adding backlash compensation, lead screw error
-   compensation, and offset (for homing) to (3).
-   It is generated the same way regardless of the mode, and is the
-   output to the PID loop or other position loop.
+ 4) This is the desired position, in motor coords.  Motor coords are
+ generated by adding backlash compensation, lead screw error
+ compensation, and offset (for homing) to (3).
+ It is generated the same way regardless of the mode, and is the
+ output to the PID loop or other position loop.
 
-5) This is the actual position, in motor coords.  It is the input from
-   encoders or other feedback device (or from virtual encoders on open
-   loop machines).  It is "generated" by reading the feedback device.
+ 5) This is the actual position, in motor coords.  It is the input from
+ encoders or other feedback device (or from virtual encoders on open
+ loop machines).  It is "generated" by reading the feedback device.
 
-6) This is the actual position, in joint coordinates.  It is generated
-   by subtracting offset, lead screw error compensation, and backlash
-   compensation from (5).  It is generated the same way regardless of
-   the operating mode.
+ 6) This is the actual position, in joint coordinates.  It is generated
+ by subtracting offset, lead screw error compensation, and backlash
+ compensation from (5).  It is generated the same way regardless of
+ the operating mode.
 
-7) This is the actual position, in Cartesean coordinates.  It is updated
-   at the traj rate, not the servo rate.
-   OLD VERSION:
-   In the old version, there are four sets of code to generate actualPos.
-   One for each operating mode, and one for when motion is disabled.
-   The code for coord and teleop modes is identical.  The code for free
-   mode is somewhat different, in particular to deal with the case where
-   one or more axes are not homed.  The disabled code is quite similar,
-   but not identical, to the coord mode code.  In general, the code
-   calculates actualPos by applying the forward kins to (6).  However,
-   where forward kins are not available, actualPos is either copied
-   from (1) (assumes no following error), or simply left alone.
-   These special cases are handled differently for each operating mode.
-   NEW VERSION:
-   I would like to both simplify and relocate this.  As far as I can
-   tell, actualPos should _always_ be the best estimate of the actual
-   machine position in Cartesean coordinates.  So it should always be
-   calculated the same way.
-   In addition to always using the same code to calculate actualPos,
-   I want to move that code.  It is really a feedback calculation, and
-   as such it belongs with the rest of the feedback calculations early
-   in control.c, not as part of the output generation code as it is now.
-   Ideally, actualPos would always be calculated by applying forward
-   kinematics to (6).  However, forward kinematics may not be available,
-   or they may be unusable because one or more axes aren't homed.  In
-   that case, the options are: A) fake it by copying (1), or B) admit
-   that we don't really know the Cartesean coordinates, and simply
-   don't update actualPos.  Whatever approach is used, I can see no
-   reason not to do it the same way regardless of the operating mode.
-   I would propose the following:  If there are forward kins, use them,
-   unless they don't work because of unhomed axes or other problems,
-   in which case do (B).  If no forward kins, do (A), since otherwise
-   actualPos would _never_ get updated.
+ 7) This is the actual position, in Cartesean coordinates.  It is updated
+ at the traj rate, not the servo rate.
+ OLD VERSION:
+ In the old version, there are four sets of code to generate actualPos.
+ One for each operating mode, and one for when motion is disabled.
+ The code for coord and teleop modes is identical.  The code for free
+ mode is somewhat different, in particular to deal with the case where
+ one or more axes are not homed.  The disabled code is quite similar,
+ but not identical, to the coord mode code.  In general, the code
+ calculates actualPos by applying the forward kins to (6).  However,
+ where forward kins are not available, actualPos is either copied
+ from (1) (assumes no following error), or simply left alone.
+ These special cases are handled differently for each operating mode.
+ NEW VERSION:
+ I would like to both simplify and relocate this.  As far as I can
+ tell, actualPos should _always_ be the best estimate of the actual
+ machine position in Cartesean coordinates.  So it should always be
+ calculated the same way.
+ In addition to always using the same code to calculate actualPos,
+ I want to move that code.  It is really a feedback calculation, and
+ as such it belongs with the rest of the feedback calculations early
+ in control.c, not as part of the output generation code as it is now.
+ Ideally, actualPos would always be calculated by applying forward
+ kinematics to (6).  However, forward kinematics may not be available,
+ or they may be unusable because one or more axes aren't homed.  In
+ that case, the options are: A) fake it by copying (1), or B) admit
+ that we don't really know the Cartesean coordinates, and simply
+ don't update actualPos.  Whatever approach is used, I can see no
+ reason not to do it the same way regardless of the operating mode.
+ I would propose the following:  If there are forward kins, use them,
+ unless they don't work because of unhomed axes or other problems,
+ in which case do (B).  If no forward kins, do (A), since otherwise
+ actualPos would _never_ get updated.
 
-*/
+ */
 
-static void compute_screw_comp(void)
-{
-    int joint_num;
-    emcmot_joint_t *joint;
-    emcmot_comp_t *comp;
-    double dpos;
-    double a_max, v_max, v, s_to_go, ds_stop, ds_vel, ds_acc, dv_acc;
+static void compute_screw_comp(void) {
+	int joint_num;
+	emcmot_joint_t *joint;
+	emcmot_comp_t *comp;
+	double dpos;
+	double a_max, v_max, v, s_to_go, ds_stop, ds_vel, ds_acc, dv_acc;
 
+	/* compute the correction */
+	for (joint_num = 0; joint_num < num_joints; joint_num++) {
+		/* point to joint struct */
+		joint = &joints[joint_num];
+		if (!GET_JOINT_ACTIVE_FLAG(joint)) {
+			/* if joint is not active, skip it */
+			continue;
+		}
+		/* point to compensation data */
+		comp = &(joint->comp);
+		if (comp->entries > 0) {
+			/* there is data in the comp table, use it */
+			/* first make sure we're in the right spot in the table */
+			while (joint->pos_cmd < comp->entry->nominal) {
+				comp->entry--;
+			}
+			while (joint->pos_cmd >= (comp->entry + 1)->nominal) {
+				comp->entry++;
+			}
+			/* now interpolate */
+			dpos = joint->pos_cmd - comp->entry->nominal;
+			if (joint->vel_cmd > 0.0) {
+				/* moving "up". apply forward screw comp */
+				joint->backlash_corr = comp->entry->fwd_trim
+						+ comp->entry->fwd_slope * dpos;
+			} else if (joint->vel_cmd < 0.0) {
+				/* moving "down". apply reverse screw comp */
+				joint->backlash_corr = comp->entry->rev_trim
+						+ comp->entry->rev_slope * dpos;
+			} else {
+				/* not moving, use whatever was there before */
+			}
+		} else {
+			/* no compensation data, just use +/- 1/2 of backlash */
+			/** FIXME: this can actually be removed - if the user space code
+			 sends a single compensation entry with any nominal value,
+			 and with fwd_trim = +0.5 times the backlash value, and
+			 rev_trim = -0.5 times backlash, the above screw comp code
+			 will give exactly the same result as this code. */
+			/* determine which way the compensation should be applied */
+			if (joint->vel_cmd > 0.0) {
+				/* moving "up". apply positive backlash comp */
+				joint->backlash_corr = 0.5 * joint->backlash;
+			} else if (joint->vel_cmd < 0.0) {
+				/* moving "down". apply negative backlash comp */
+				joint->backlash_corr = -0.5 * joint->backlash;
+			} else {
+				/* not moving, use whatever was there before */
+			}
+		}
+		/* at this point, the correction has been computed, but
+		 the value may make abrupt jumps on direction reversal */
+		/*
+		 * 07/09/2005 - S-curve implementation by Bas Laarhoven
+		 *
+		 * Implementation:
+		 *   Generate a ramped velocity profile for backlash or screw error comp.
+		 *   The velocity is ramped up to the maximum speed setting (if possible),
+		 *   using the maximum acceleration setting.
+		 *   At the end, the speed is ramped dowm using the same acceleration.
+		 *   The algorithm keeps looking ahead. Depending on the distance to go,
+		 *   the speed is increased, kept constant or decreased.
+		 *
+		 * Limitations:
+		 *   Since the compensation adds up to the normal movement, total
+		 *   accelleration and total velocity may exceed maximum settings!
+		 *   Currently this is limited to 150% by implementation.
+		 *   To fix this, the calculations in get_pos_cmd should include
+		 *   information from the backlash corection. This makes things
+		 *   rather complicated and it might be better to implement the
+		 *   backlash compensation at another place to prevent this kind
+		 *   of interaction.
+		 *   More testing under different circumstances will show if this
+		 *   needs a more complicate solution.
+		 *   For now this implementation seems to generate smoother
+		 *   movements and less following errors than the original code.
+		 */
 
-    /* compute the correction */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-        /* point to joint struct */
-        joint = &joints[joint_num];
-	if (!GET_JOINT_ACTIVE_FLAG(joint)) {
-	    /* if joint is not active, skip it */
-	    continue;
+		/* Limit maximum accelleration and velocity 'overshoot'
+		 * to 150% of the maximum settings.
+		 * The TP and backlash shouldn't use more than 100%
+		 * (together) but this requires some interaction that
+		 * isn't implemented yet.
+		 */
+		v_max = 0.5 * joint->vel_limit * emcmotStatus->net_feed_scale;
+		a_max = 0.5 * joint->acc_limit;
+		v = joint->backlash_vel;
+		if (joint->backlash_corr >= joint->backlash_filt) {
+			s_to_go = joint->backlash_corr - joint->backlash_filt; /* abs val */
+			if (s_to_go > 0) {
+				// off target, need to move
+				ds_vel = v * servo_period; /* abs val */
+				dv_acc = a_max * servo_period; /* abs val */
+				ds_stop = 0.5 * (v + dv_acc) * (v + dv_acc) / a_max; /* abs val */
+				if (s_to_go <= ds_stop + ds_vel) {
+					// ramp down
+					if (v > dv_acc) {
+						// decellerate one period
+						ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
+						joint->backlash_vel -= dv_acc;
+						joint->backlash_filt += ds_vel - ds_acc;
+					} else {
+						// last step to target
+						joint->backlash_vel = 0.0;
+						joint->backlash_filt = joint->backlash_corr;
+					}
+				} else {
+					if (v + dv_acc > v_max) {
+						dv_acc = v_max - v; /* abs val */
+					}
+					ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
+					ds_stop = 0.5 * (v + dv_acc) * (v + dv_acc) / a_max; /* abs val */
+					if (s_to_go > ds_stop + ds_vel + ds_acc) {
+						// ramp up
+						joint->backlash_vel += dv_acc;
+						joint->backlash_filt += ds_vel + ds_acc;
+					} else {
+						// constant velocity
+						joint->backlash_filt += ds_vel;
+					}
+				}
+			} else if (s_to_go < 0) {
+				// safely handle overshoot (should not occur)
+				joint->backlash_vel = 0.0;
+				joint->backlash_filt = joint->backlash_corr;
+			}
+		} else { /* joint->backlash_corr < 0.0 */
+			s_to_go = joint->backlash_filt - joint->backlash_corr; /* abs val */
+			if (s_to_go > 0) {
+				// off target, need to move
+				ds_vel = -v * servo_period; /* abs val */
+				dv_acc = a_max * servo_period; /* abs val */
+				ds_stop = 0.5 * (v - dv_acc) * (v - dv_acc) / a_max; /* abs val */
+				if (s_to_go <= ds_stop + ds_vel) {
+					// ramp down
+					if (-v > dv_acc) {
+						// decellerate one period
+						ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
+						joint->backlash_vel += dv_acc; /* decrease */
+						joint->backlash_filt -= ds_vel - ds_acc;
+					} else {
+						// last step to target
+						joint->backlash_vel = 0.0;
+						joint->backlash_filt = joint->backlash_corr;
+					}
+				} else {
+					if (-v + dv_acc > v_max) {
+						dv_acc = v_max + v; /* abs val */
+					}
+					ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
+					ds_stop = 0.5 * (v - dv_acc) * (v - dv_acc) / a_max; /* abs val */
+					if (s_to_go > ds_stop + ds_vel + ds_acc) {
+						// ramp up
+						joint->backlash_vel -= dv_acc; /* increase */
+						joint->backlash_filt -= ds_vel + ds_acc;
+					} else {
+						// constant velocity
+						joint->backlash_filt -= ds_vel;
+					}
+				}
+			} else if (s_to_go < 0) {
+				// safely handle overshoot (should not occur)
+				joint->backlash_vel = 0.0;
+				joint->backlash_filt = joint->backlash_corr;
+			}
+		}
+		/* backlash (and motor offset) will be applied to output later */
+		/* end of joint loop */
 	}
-	/* point to compensation data */
-	comp = &(joint->comp);
-	if ( comp->entries > 0 ) {
-	    /* there is data in the comp table, use it */
-	    /* first make sure we're in the right spot in the table */
-	    while ( joint->pos_cmd < comp->entry->nominal ) {
-		comp->entry--;
-	    }
-	    while ( joint->pos_cmd >= (comp->entry+1)->nominal ) {
-		comp->entry++;
-	    }
-	    /* now interpolate */
-	    dpos = joint->pos_cmd - comp->entry->nominal;
-	    if (joint->vel_cmd > 0.0) {
-	        /* moving "up". apply forward screw comp */
-		joint->backlash_corr = comp->entry->fwd_trim + 
-					comp->entry->fwd_slope * dpos;
-	    } else if (joint->vel_cmd < 0.0) {
-	        /* moving "down". apply reverse screw comp */
-		joint->backlash_corr = comp->entry->rev_trim +
-					comp->entry->rev_slope * dpos;
-	    } else {
-		/* not moving, use whatever was there before */
-	    }
-	} else {
-	    /* no compensation data, just use +/- 1/2 of backlash */
-	    /** FIXME: this can actually be removed - if the user space code
-		sends a single compensation entry with any nominal value,
-		and with fwd_trim = +0.5 times the backlash value, and 
-		rev_trim = -0.5 times backlash, the above screw comp code
-		will give exactly the same result as this code. */
-	    /* determine which way the compensation should be applied */
-	    if (joint->vel_cmd > 0.0) {
-	        /* moving "up". apply positive backlash comp */
-		joint->backlash_corr = 0.5 * joint->backlash;
-	    } else if (joint->vel_cmd < 0.0) {
-	        /* moving "down". apply negative backlash comp */
-		joint->backlash_corr = -0.5 * joint->backlash;
-	    } else {
-		/* not moving, use whatever was there before */
-	    }
-	}
-	/* at this point, the correction has been computed, but
-	   the value may make abrupt jumps on direction reversal */
-    /*
-     * 07/09/2005 - S-curve implementation by Bas Laarhoven
-     *
-     * Implementation:
-     *   Generate a ramped velocity profile for backlash or screw error comp.
-     *   The velocity is ramped up to the maximum speed setting (if possible),
-     *   using the maximum acceleration setting.
-     *   At the end, the speed is ramped dowm using the same acceleration.
-     *   The algorithm keeps looking ahead. Depending on the distance to go,
-     *   the speed is increased, kept constant or decreased.
-     *   
-     * Limitations:
-     *   Since the compensation adds up to the normal movement, total
-     *   accelleration and total velocity may exceed maximum settings!
-     *   Currently this is limited to 150% by implementation.
-     *   To fix this, the calculations in get_pos_cmd should include
-     *   information from the backlash corection. This makes things
-     *   rather complicated and it might be better to implement the
-     *   backlash compensation at another place to prevent this kind
-     *   of interaction.
-     *   More testing under different circumstances will show if this
-     *   needs a more complicate solution.
-     *   For now this implementation seems to generate smoother
-     *   movements and less following errors than the original code.
-     */
-
-	/* Limit maximum accelleration and velocity 'overshoot'
-	 * to 150% of the maximum settings.
-	 * The TP and backlash shouldn't use more than 100%
-	 * (together) but this requires some interaction that
-	 * isn't implemented yet.
-	 */ 
-        v_max = 0.5 * joint->vel_limit * emcmotStatus->net_feed_scale;
-        a_max = 0.5 * joint->acc_limit;
-        v = joint->backlash_vel;
-        if (joint->backlash_corr >= joint->backlash_filt) {
-            s_to_go = joint->backlash_corr - joint->backlash_filt; /* abs val */
-            if (s_to_go > 0) {
-                // off target, need to move
-                ds_vel  = v * servo_period;           /* abs val */
-                dv_acc  = a_max * servo_period;       /* abs val */
-                ds_stop = 0.5 * (v + dv_acc) *
-		                (v + dv_acc) / a_max; /* abs val */
-                if (s_to_go <= ds_stop + ds_vel) {
-                    // ramp down
-                    if (v > dv_acc) {
-                        // decellerate one period
-                        ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
-                        joint->backlash_vel  -= dv_acc;
-                        joint->backlash_filt += ds_vel - ds_acc;
-                    } else {
-                        // last step to target
-                        joint->backlash_vel  = 0.0;
-                        joint->backlash_filt = joint->backlash_corr;
-                    }
-                } else {
-                    if (v + dv_acc > v_max) {
-                        dv_acc = v_max - v;                /* abs val */
-                    }
-                    ds_acc  = 0.5 * dv_acc * servo_period; /* abs val */
-                    ds_stop = 0.5 * (v + dv_acc) *
-                                    (v + dv_acc) / a_max;  /* abs val */
-                    if (s_to_go > ds_stop + ds_vel + ds_acc) {
-                        // ramp up
-                       joint->backlash_vel  += dv_acc;
-                       joint->backlash_filt += ds_vel + ds_acc;
-                    } else {
-                       // constant velocity
-                       joint->backlash_filt += ds_vel;
-                    }
-                }
-            } else if (s_to_go < 0) {
-                // safely handle overshoot (should not occur)
-               joint->backlash_vel = 0.0;
-               joint->backlash_filt = joint->backlash_corr;
-            }
-        } else {  /* joint->backlash_corr < 0.0 */
-            s_to_go = joint->backlash_filt - joint->backlash_corr; /* abs val */
-            if (s_to_go > 0) {
-                // off target, need to move
-                ds_vel  = -v * servo_period;          /* abs val */
-                dv_acc  = a_max * servo_period;       /* abs val */
-                ds_stop = 0.5 * (v - dv_acc) *
-			        (v - dv_acc) / a_max; /* abs val */
-                if (s_to_go <= ds_stop + ds_vel) {
-                    // ramp down
-                    if (-v > dv_acc) {
-                        // decellerate one period
-                        ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
-                        joint->backlash_vel  += dv_acc;   /* decrease */
-                        joint->backlash_filt -= ds_vel - ds_acc;
-                    } else {
-                        // last step to target
-                        joint->backlash_vel = 0.0;
-                        joint->backlash_filt = joint->backlash_corr;
-                    }
-                } else {
-                    if (-v + dv_acc > v_max) {
-                        dv_acc = v_max + v;               /* abs val */
-                    }
-                    ds_acc = 0.5 * dv_acc * servo_period; /* abs val */
-                    ds_stop = 0.5 * (v - dv_acc) *
-                                    (v - dv_acc) / a_max; /* abs val */
-                    if (s_to_go > ds_stop + ds_vel + ds_acc) {
-                        // ramp up
-                        joint->backlash_vel  -= dv_acc;   /* increase */
-                        joint->backlash_filt -= ds_vel + ds_acc;
-                    } else {
-                        // constant velocity
-                        joint->backlash_filt -= ds_vel;
-                    }
-                }
-            } else if (s_to_go < 0) {
-                // safely handle overshoot (should not occur)
-                joint->backlash_vel = 0.0;
-                joint->backlash_filt = joint->backlash_corr;
-            }
-        }
-        /* backlash (and motor offset) will be applied to output later */
-        /* end of joint loop */
-    }
 }
 
 /*! \todo FIXME - once the HAL refactor is done so that metadata isn't stored
-   in shared memory, I want to seriously consider moving some of the
-   structures into the HAL memory block.  This will eliminate most of
-   this useless copying, and make nearly everything accessible to
-   halscope and halmeter for debugging.
-*/
+ in shared memory, I want to seriously consider moving some of the
+ structures into the HAL memory block.  This will eliminate most of
+ this useless copying, and make nearly everything accessible to
+ halscope and halmeter for debugging.
+ */
 
-static void output_to_hal(void)
-{
-    int joint_num;
-    emcmot_joint_t *joint;
-    joint_hal_t *joint_data;
-    static int old_motion_index=0, old_hal_index=0;
+static void output_to_hal(void) {
+	int joint_num;
+	emcmot_joint_t *joint;
+	joint_hal_t *joint_data;
+	static int old_motion_index = 0, old_hal_index = 0;
 
-    /* output machine info to HAL for scoping, etc */
+	/* output machine info to HAL for scoping, etc */
 
-    *(emcmot_hal_data->motion_enabled) = GET_MOTION_ENABLE_FLAG();
-    *(emcmot_hal_data->in_position) = GET_MOTION_INPOS_FLAG();
-    *(emcmot_hal_data->coord_mode) = GET_MOTION_COORD_FLAG();
-    *(emcmot_hal_data->teleop_mode) = GET_MOTION_TELEOP_FLAG();
-    *(emcmot_hal_data->coord_error) = GET_MOTION_ERROR_FLAG();
-    *(emcmot_hal_data->on_soft_limit) = emcmotStatus->on_soft_limit;
-    if(emcmotStatus->spindle.css_factor) {
-	double denom = rtapi_fabs(emcmotStatus->spindle.xoffset - emcmotStatus->carte_pos_cmd.tran.x);
-	double speed;
-        double maxpositive;
-        if(denom > 0) speed = emcmotStatus->spindle.css_factor / denom;
-	else speed = emcmotStatus->spindle.speed;
+	*(emcmot_hal_data->motion_enabled) = GET_MOTION_ENABLE_FLAG();
+	*(emcmot_hal_data->in_position) = GET_MOTION_INPOS_FLAG();
+	*(emcmot_hal_data->coord_mode) = GET_MOTION_COORD_FLAG();
+	*(emcmot_hal_data->teleop_mode) = GET_MOTION_TELEOP_FLAG();
+	*(emcmot_hal_data->coord_error) = GET_MOTION_ERROR_FLAG();
+	*(emcmot_hal_data->on_soft_limit) = emcmotStatus->on_soft_limit;
+	if (emcmotStatus->spindle.css_factor) {
+		double denom = rtapi_fabs(
+				emcmotStatus->spindle.xoffset
+						- emcmotStatus->carte_pos_cmd.tran.x);
+		double speed;
+		double maxpositive;
+		if (denom > 0)
+			speed = emcmotStatus->spindle.css_factor / denom;
+		else
+			speed = emcmotStatus->spindle.speed;
 
-	speed = speed * emcmotStatus->net_spindle_scale;
+		speed = speed * emcmotStatus->net_spindle_scale;
 
-        maxpositive = rtapi_fabs(emcmotStatus->spindle.speed);
-        // cap speed to G96 D...
-        if(speed < -maxpositive)
-            speed = -maxpositive;
-        if(speed > maxpositive)
-            speed = maxpositive;
+		maxpositive = rtapi_fabs(emcmotStatus->spindle.speed);
+		// cap speed to G96 D...
+		if (speed < -maxpositive)
+			speed = -maxpositive;
+		if (speed > maxpositive)
+			speed = maxpositive;
 
-	*(emcmot_hal_data->spindle_speed_out) = speed;
-	*(emcmot_hal_data->spindle_speed_out_rps) = speed/60.;
-    } else {
-	*(emcmot_hal_data->spindle_speed_out) = emcmotStatus->spindle.speed * emcmotStatus->net_spindle_scale;
-	*(emcmot_hal_data->spindle_speed_out_rps) = emcmotStatus->spindle.speed * emcmotStatus->net_spindle_scale / 60.;
-    }
-	*(emcmot_hal_data->spindle_speed_out_abs) = rtapi_fabs(*(emcmot_hal_data->spindle_speed_out));
-	*(emcmot_hal_data->spindle_speed_out_rps_abs) = rtapi_fabs(*(emcmot_hal_data->spindle_speed_out_rps));
-    *(emcmot_hal_data->spindle_speed_cmd_rps) = emcmotStatus->spindle.speed / 60.;
-    *(emcmot_hal_data->spindle_on) = ((emcmotStatus->spindle.speed * emcmotStatus->net_spindle_scale) != 0) ? 1 : 0;
-    *(emcmot_hal_data->spindle_forward) = (*emcmot_hal_data->spindle_speed_out > 0) ? 1 : 0;
-    *(emcmot_hal_data->spindle_reverse) = (*emcmot_hal_data->spindle_speed_out < 0) ? 1 : 0;
-    *(emcmot_hal_data->spindle_brake) = (emcmotStatus->spindle.brake != 0) ? 1 : 0;
-
-    *(emcmot_hal_data->program_line) = emcmotStatus->id;
-    *(emcmot_hal_data->current_motion_type) = emcmotStatus->motionType;
-    *(emcmot_hal_data->distance_to_go) = emcmotStatus->distance_to_go;
-
-    if(GET_MOTION_COORD_FLAG()) {
-        *(emcmot_hal_data->current_vel) = emcmotStatus->current_vel;
-        *(emcmot_hal_data->requested_vel) = emcmotStatus->requested_vel;
-
-    } else if(GET_MOTION_TELEOP_FLAG()) {
-        PmCartesian t = emcmotDebug->teleop_data.currentVel.tran;
-        *(emcmot_hal_data->requested_vel) = 0.0;
-        emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) = rtapi_sqrt(t.x * t.x + t.y * t.y + t.z * t.z);
-    } else {
-        int i;
-        double v2 = 0.0;
-        for(i=0; i<num_joints; i++)
-            if(GET_JOINT_ACTIVE_FLAG(&(joints[i])) && joints[i].free_tp_active)
-                v2 += joints[i].vel_cmd * joints[i].vel_cmd;
-        if(v2 > 0.0)
-            emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) = rtapi_sqrt(v2);
-        else
-            emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) = 0.0;
-        *(emcmot_hal_data->requested_vel) = 0.0;
-    }
-
-    /* These params can be used to examine any internal variable. */
-    /* Change the following lines to assign the variable you want to observe
-       to one of the debug parameters.  You can also comment out these lines
-       and copy elsewhere if you want to observe an automatic variable that
-       isn't in scope here. */
-    emcmot_hal_data->debug_bit_0 = joints[1].free_tp_active;
-    emcmot_hal_data->debug_bit_1 = emcmotStatus->enables_new & AF_ENABLED;
-    emcmot_hal_data->debug_float_0 = emcmotStatus->net_feed_scale;
-    emcmot_hal_data->debug_float_1 = emcmotStatus->spindleRevs;
-    emcmot_hal_data->debug_float_2 = emcmotStatus->spindleSpeedIn;
-    emcmot_hal_data->debug_float_3 = emcmotStatus->net_spindle_scale;
-    emcmot_hal_data->debug_s32_0 = emcmotStatus->overrideLimitMask;
-    emcmot_hal_data->debug_s32_1 = emcmotStatus->tcqlen;
-
-    /* two way handshaking for the spindle encoder */
-    if(emcmotStatus->spindle_index_enable && !old_motion_index) {
-        *emcmot_hal_data->spindle_index_enable = 1;
-    }
-
-    if(!*emcmot_hal_data->spindle_index_enable && old_hal_index) {
-        emcmotStatus->spindle_index_enable = 0;
-    }
-
-    old_motion_index = emcmotStatus->spindle_index_enable;
-    old_hal_index = *emcmot_hal_data->spindle_index_enable;
-
-    *(emcmot_hal_data->tooloffset_x) = emcmotStatus->tool_offset.tran.x;
-    *(emcmot_hal_data->tooloffset_y) = emcmotStatus->tool_offset.tran.y;
-    *(emcmot_hal_data->tooloffset_z) = emcmotStatus->tool_offset.tran.z;
-    *(emcmot_hal_data->tooloffset_a) = emcmotStatus->tool_offset.a;
-    *(emcmot_hal_data->tooloffset_b) = emcmotStatus->tool_offset.b;
-    *(emcmot_hal_data->tooloffset_c) = emcmotStatus->tool_offset.c;
-    *(emcmot_hal_data->tooloffset_u) = emcmotStatus->tool_offset.u;
-    *(emcmot_hal_data->tooloffset_v) = emcmotStatus->tool_offset.v;
-    *(emcmot_hal_data->tooloffset_w) = emcmotStatus->tool_offset.w;
-
-    /* output joint info to HAL for scoping, etc */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint struct */
-	joint = &joints[joint_num];
-	/* apply backlash and motor offset to output */
-	joint->motor_pos_cmd =
-	    joint->pos_cmd + joint->backlash_filt + joint->motor_offset;
-	/* point to HAL data */
-	joint_data = &(emcmot_hal_data->joint[joint_num]);
-	/* write to HAL pins */
-        *(joint_data->motor_offset) = joint->motor_offset;
-	*(joint_data->motor_pos_cmd) = joint->motor_pos_cmd;
-	//*(joint_data->motor_pos_cmd) = 1;
-	*(joint_data->joint_pos_cmd) = joint->pos_cmd;
-	//*(joint_data->joint_pos_cmd) = 1;
-	*(joint_data->joint_pos_fb) = joint->pos_fb;
-	//*(joint_data->joint_pos_fb) = 1;
-	*(joint_data->amp_enable) = GET_JOINT_ENABLE_FLAG(joint);
-	*(joint_data->index_enable) = joint->index_enable;
-	*(joint_data->homing) = GET_JOINT_HOMING_FLAG(joint);
-
-	*(joint_data->coarse_pos_cmd) = joint->coarse_pos;
-	//*(joint_data->coarse_pos_cmd) = 1;
-	*(joint_data->joint_vel_cmd) = joint->vel_cmd;
-	//*(joint_data->joint_vel_cmd) = 1;
-	*(joint_data->backlash_corr) = joint->backlash_corr;
-	*(joint_data->backlash_filt) = joint->backlash_filt;
-	*(joint_data->backlash_vel) = joint->backlash_vel;
-	*(joint_data->f_error) = joint->ferror;
-	*(joint_data->f_error_lim) = joint->ferror_limit;
-
-	*(joint_data->free_pos_cmd) = joint->free_pos_cmd;
-	*(joint_data->free_vel_lim) = joint->free_vel_lim;
-	*(joint_data->free_tp_enable) = joint->free_tp_enable;
-	*(joint_data->kb_jog_active) = joint->kb_jog_active;
-	*(joint_data->wheel_jog_active) = joint->wheel_jog_active;
-
-	*(joint_data->active) = GET_JOINT_ACTIVE_FLAG(joint);
-	*(joint_data->in_position) = GET_JOINT_INPOS_FLAG(joint);
-	*(joint_data->error) = GET_JOINT_ERROR_FLAG(joint);
-	*(joint_data->phl) = GET_JOINT_PHL_FLAG(joint);
-	*(joint_data->nhl) = GET_JOINT_NHL_FLAG(joint);
-	*(joint_data->homed) = GET_JOINT_HOMED_FLAG(joint);
-	*(joint_data->f_errored) = GET_JOINT_FERROR_FLAG(joint);
-	*(joint_data->faulted) = GET_JOINT_FAULT_FLAG(joint);
-	*(joint_data->home_state) = joint->home_state;
-
-    // ADDED BY MUKUL 4/20
-	if (joint_num < 9) {
-	  log_joint_vel[joint_num] = *joint_data->joint_vel_cmd;
-	  log_joint_pos[joint_num] = *joint_data->joint_pos_cmd;
+		*(emcmot_hal_data->spindle_speed_out) = speed;
+		*(emcmot_hal_data->spindle_speed_out_rps) = speed / 60.;
+	} else {
+		*(emcmot_hal_data->spindle_speed_out) = emcmotStatus->spindle.speed
+				* emcmotStatus->net_spindle_scale;
+		*(emcmot_hal_data->spindle_speed_out_rps) = emcmotStatus->spindle.speed
+				* emcmotStatus->net_spindle_scale / 60.;
 	}
-    } // while joint end
-    if (GET_MOTION_COORD_FLAG()) {
-	  syslog_async(LOG_ERR, "*MUKUL JOINT* %f %f %f %f", log_joint_pos[0], log_joint_vel[0], log_joint_pos[1], log_joint_vel[1]);
-    }
+	*(emcmot_hal_data->spindle_speed_out_abs) = rtapi_fabs(
+			*(emcmot_hal_data->spindle_speed_out));
+	*(emcmot_hal_data->spindle_speed_out_rps_abs) = rtapi_fabs(
+			*(emcmot_hal_data->spindle_speed_out_rps));
+	*(emcmot_hal_data->spindle_speed_cmd_rps) = emcmotStatus->spindle.speed
+			/ 60.;
+	*(emcmot_hal_data->spindle_on) =
+			((emcmotStatus->spindle.speed * emcmotStatus->net_spindle_scale)
+					!= 0) ? 1 : 0;
+	*(emcmot_hal_data->spindle_forward) =
+			(*emcmot_hal_data->spindle_speed_out > 0) ? 1 : 0;
+	*(emcmot_hal_data->spindle_reverse) =
+			(*emcmot_hal_data->spindle_speed_out < 0) ? 1 : 0;
+	*(emcmot_hal_data->spindle_brake) =
+			(emcmotStatus->spindle.brake != 0) ? 1 : 0;
+
+	*(emcmot_hal_data->program_line) = emcmotStatus->id;
+	*(emcmot_hal_data->current_motion_type) = emcmotStatus->motionType;
+	*(emcmot_hal_data->distance_to_go) = emcmotStatus->distance_to_go;
+
+	if (GET_MOTION_COORD_FLAG()) {
+		*(emcmot_hal_data->current_vel) = emcmotStatus->current_vel;
+		*(emcmot_hal_data->requested_vel) = emcmotStatus->requested_vel;
+
+	} else if (GET_MOTION_TELEOP_FLAG()) {
+		PmCartesian t = emcmotDebug->teleop_data.currentVel.tran;
+		*(emcmot_hal_data->requested_vel) = 0.0;
+		emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) =
+				rtapi_sqrt(t.x * t.x + t.y * t.y + t.z * t.z);
+	} else {
+		int i;
+		double v2 = 0.0;
+		for (i = 0; i < num_joints; i++)
+			if (GET_JOINT_ACTIVE_FLAG(&(joints[i])) && joints[i].free_tp_active)
+				v2 += joints[i].vel_cmd * joints[i].vel_cmd;
+		if (v2 > 0.0)
+			emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) =
+					rtapi_sqrt(v2);
+		else
+			emcmotStatus->current_vel = (*emcmot_hal_data->current_vel) = 0.0;
+		*(emcmot_hal_data->requested_vel) = 0.0;
+	}
+
+	/* These params can be used to examine any internal variable. */
+	/* Change the following lines to assign the variable you want to observe
+	 to one of the debug parameters.  You can also comment out these lines
+	 and copy elsewhere if you want to observe an automatic variable that
+	 isn't in scope here. */
+	emcmot_hal_data->debug_bit_0 = joints[1].free_tp_active;
+	emcmot_hal_data->debug_bit_1 = emcmotStatus->enables_new & AF_ENABLED;
+	emcmot_hal_data->debug_float_0 = emcmotStatus->net_feed_scale;
+	emcmot_hal_data->debug_float_1 = emcmotStatus->spindleRevs;
+	emcmot_hal_data->debug_float_2 = emcmotStatus->spindleSpeedIn;
+	emcmot_hal_data->debug_float_3 = emcmotStatus->net_spindle_scale;
+	emcmot_hal_data->debug_s32_0 = emcmotStatus->overrideLimitMask;
+	emcmot_hal_data->debug_s32_1 = emcmotStatus->tcqlen;
+
+	/* two way handshaking for the spindle encoder */
+	if (emcmotStatus->spindle_index_enable && !old_motion_index) {
+		*emcmot_hal_data->spindle_index_enable = 1;
+	}
+
+	if (!*emcmot_hal_data->spindle_index_enable && old_hal_index) {
+		emcmotStatus->spindle_index_enable = 0;
+	}
+
+	old_motion_index = emcmotStatus->spindle_index_enable;
+	old_hal_index = *emcmot_hal_data->spindle_index_enable;
+
+	*(emcmot_hal_data->tooloffset_x) = emcmotStatus->tool_offset.tran.x;
+	*(emcmot_hal_data->tooloffset_y) = emcmotStatus->tool_offset.tran.y;
+	*(emcmot_hal_data->tooloffset_z) = emcmotStatus->tool_offset.tran.z;
+	*(emcmot_hal_data->tooloffset_a) = emcmotStatus->tool_offset.a;
+	*(emcmot_hal_data->tooloffset_b) = emcmotStatus->tool_offset.b;
+	*(emcmot_hal_data->tooloffset_c) = emcmotStatus->tool_offset.c;
+	*(emcmot_hal_data->tooloffset_u) = emcmotStatus->tool_offset.u;
+	*(emcmot_hal_data->tooloffset_v) = emcmotStatus->tool_offset.v;
+	*(emcmot_hal_data->tooloffset_w) = emcmotStatus->tool_offset.w;
+
+	/* output joint info to HAL for scoping, etc */
+	for (joint_num = 0; joint_num < num_joints; joint_num++) {
+		/* point to joint struct */
+		joint = &joints[joint_num];
+		/* apply backlash and motor offset to output */
+		joint->motor_pos_cmd = joint->pos_cmd + joint->backlash_filt
+				+ joint->motor_offset;
+		/* point to HAL data */
+		joint_data = &(emcmot_hal_data->joint[joint_num]);
+		/* write to HAL pins */
+		*(joint_data->motor_offset) = joint->motor_offset;
+		*(joint_data->motor_pos_cmd) = joint->motor_pos_cmd;
+		//*(joint_data->motor_pos_cmd) = 1;
+		*(joint_data->joint_pos_cmd) = joint->pos_cmd;
+		//*(joint_data->joint_pos_cmd) = 1;
+		*(joint_data->joint_pos_fb) = joint->pos_fb;
+		//*(joint_data->joint_pos_fb) = 1;
+		*(joint_data->amp_enable) = GET_JOINT_ENABLE_FLAG(joint);
+		*(joint_data->index_enable) = joint->index_enable;
+		*(joint_data->homing) = GET_JOINT_HOMING_FLAG(joint);
+
+		*(joint_data->coarse_pos_cmd) = joint->coarse_pos;
+		//*(joint_data->coarse_pos_cmd) = 1;
+		*(joint_data->joint_vel_cmd) = joint->vel_cmd;
+		//*(joint_data->joint_vel_cmd) = 1;
+		*(joint_data->backlash_corr) = joint->backlash_corr;
+		*(joint_data->backlash_filt) = joint->backlash_filt;
+		*(joint_data->backlash_vel) = joint->backlash_vel;
+		*(joint_data->f_error) = joint->ferror;
+		*(joint_data->f_error_lim) = joint->ferror_limit;
+
+		*(joint_data->free_pos_cmd) = joint->free_pos_cmd;
+		*(joint_data->free_vel_lim) = joint->free_vel_lim;
+		*(joint_data->free_tp_enable) = joint->free_tp_enable;
+		*(joint_data->kb_jog_active) = joint->kb_jog_active;
+		*(joint_data->wheel_jog_active) = joint->wheel_jog_active;
+
+		*(joint_data->active) = GET_JOINT_ACTIVE_FLAG(joint);
+		*(joint_data->in_position) = GET_JOINT_INPOS_FLAG(joint);
+		*(joint_data->error) = GET_JOINT_ERROR_FLAG(joint);
+		*(joint_data->phl) = GET_JOINT_PHL_FLAG(joint);
+		*(joint_data->nhl) = GET_JOINT_NHL_FLAG(joint);
+		*(joint_data->homed) = GET_JOINT_HOMED_FLAG(joint);
+		*(joint_data->f_errored) = GET_JOINT_FERROR_FLAG(joint);
+		*(joint_data->faulted) = GET_JOINT_FAULT_FLAG(joint);
+		*(joint_data->home_state) = joint->home_state;
+
+		// ADDED BY MUKUL 4/20
+		if (joint_num < 9) {
+			log_joint_vel[joint_num] = *joint_data->joint_vel_cmd;
+			//log_joint_pos[joint_num] = *joint_data->joint_pos_cmd;
+		}
+	} // while joint end
+	if ((*(emcmot_hal_data->program_line) != 0)
+			& (*(emcmot_hal_data->requested_vel) != 0)) {
+		syslog_async(LOG_ERR, "*MUKUL JOINT* %i %f %f %f %f",
+				*(emcmot_hal_data->program_line), log_joint_pos[0],
+				log_joint_vel[0], log_joint_pos[1], log_joint_vel[1]);
+	}
 }
 
-static void update_status(void)
-{
-    int joint_num, dio, aio;
-    emcmot_joint_t *joint;
-    emcmot_joint_status_t *joint_status;
+static void update_status(void) {
+	int joint_num, dio, aio;
+	emcmot_joint_t *joint;
+	emcmot_joint_status_t *joint_status;
 #ifdef WATCH_FLAGS
-    static int old_joint_flags[8];
-    static int old_motion_flag;
+	static int old_joint_flags[8];
+	static int old_motion_flag;
 #endif
 
-    /* copy status info from private joint structure to status
-       struct in shared memory */
-    for (joint_num = 0; joint_num < num_joints; joint_num++) {
-	/* point to joint data */
-	joint = &joints[joint_num];
-	/* point to joint status */
-	joint_status = &(emcmotStatus->joint_status[joint_num]);
-	/* copy stuff */
+	/* copy status info from private joint structure to status
+	 struct in shared memory */
+	for (joint_num = 0; joint_num < num_joints; joint_num++) {
+		/* point to joint data */
+		joint = &joints[joint_num];
+		/* point to joint status */
+		joint_status = &(emcmotStatus->joint_status[joint_num]);
+		/* copy stuff */
+#ifdef WATCH_FLAGS
+		/*! \todo FIXME - this is for debugging */
+		if ( old_joint_flags[joint_num] != joint->flag ) {
+			rtapi_print ( "Joint %d flag %04X -> %04X\n", joint_num, old_joint_flags[joint_num], joint->flag );
+			old_joint_flags[joint_num] = joint->flag;
+		}
+#endif
+		joint_status->flag = joint->flag;
+		joint_status->pos_cmd = joint->pos_cmd;
+		joint_status->pos_fb = joint->pos_fb;
+		joint_status->vel_cmd = joint->vel_cmd;
+		joint_status->ferror = joint->ferror;
+		joint_status->ferror_high_mark = joint->ferror_high_mark;
+		joint_status->backlash = joint->backlash;
+		joint_status->max_pos_limit = joint->max_pos_limit;
+		joint_status->min_pos_limit = joint->min_pos_limit;
+		joint_status->min_ferror = joint->min_ferror;
+		joint_status->max_ferror = joint->max_ferror;
+		joint_status->home_offset = *(joint->home_offset);
+	}
+
+	for (dio = 0; dio < num_dio; dio++) {
+		emcmotStatus->synch_di[dio] = *(emcmot_hal_data->synch_di[dio]);
+		emcmotStatus->synch_do[dio] = *(emcmot_hal_data->synch_do[dio]);
+	}
+
+	for (aio = 0; aio < num_aio; aio++) {
+		emcmotStatus->analog_input[aio] = *(emcmot_hal_data->analog_input[aio]);
+		emcmotStatus->analog_output[aio] =
+				*(emcmot_hal_data->analog_output[aio]);
+	}
+
+	/*! \todo FIXME - the rest of this function is stuff that was apparently
+	 dropped in the initial move from emcmot.c to control.c.  I
+	 don't know how much is still needed, and how much is baggage.
+	 */
+
+	/* motion emcmotDebug->queue status */
+	emcmotStatus->depth = emcmotConfig->vtp->tpQueueDepth(emcmotQueue);
+	emcmotStatus->activeDepth = emcmotConfig->vtp->tpActiveDepth(emcmotQueue);
+
+	// only update motion id and real depth when running on primary queue
+	if (emcmotQueue == emcmotPrimQueue) {
+		emcmotStatus->depth = emcmotConfig->vtp->tpQueueDepth(emcmotQueue);
+		emcmotStatus->id = emcmotConfig->vtp->tpGetExecId(emcmotQueue);
+		emcmotStatus->tag = emcmotConfig->vtp->tpGetExecTag(&emcmotDebug->tp);
+	} else {
+		// pretend we're doing something so task keeps
+		// waiting for motion
+		emcmotStatus->depth = 1;
+	}
+	emcmotStatus->pause_state = *(emcmot_hal_data->pause_state);
+	emcmotStatus->motionType = emcmotConfig->vtp->tpGetMotionType(emcmotQueue);
+	emcmotStatus->queueFull = emcmotConfig->vtp->tcqFull(&emcmotQueue->queue);
+
+	/* check to see if we should pause in order to implement
+	 single emcmotDebug->stepping */
+	if (emcmotDebug->stepping && *emcmot_hal_data->pause_state == PS_RUNNING
+			&& emcmotDebug->idForStep != emcmotStatus->id) {
+		// defer the actual pause to the pause FSM since we're
+		// switching motion queues - do this in one place only
+		emcmotDebug->stepping = 0;
+		emcmotStatus->pause_state = *(emcmot_hal_data->pause_state) =
+				PS_PAUSING_FOR_STEP; // enter pause asap
+	}
 #ifdef WATCH_FLAGS
 	/*! \todo FIXME - this is for debugging */
-	if ( old_joint_flags[joint_num] != joint->flag ) {
-	    rtapi_print ( "Joint %d flag %04X -> %04X\n", joint_num, old_joint_flags[joint_num], joint->flag );
-	    old_joint_flags[joint_num] = joint->flag;
+	if ( old_motion_flag != emcmotStatus->motionFlag ) {
+		rtapi_print ( "Motion flag %04X -> %04X\n", old_motion_flag, emcmotStatus->motionFlag );
+		old_motion_flag = emcmotStatus->motionFlag;
 	}
-#endif
-	joint_status->flag = joint->flag;
-	joint_status->pos_cmd = joint->pos_cmd;
-	joint_status->pos_fb = joint->pos_fb;
-	joint_status->vel_cmd = joint->vel_cmd;
-	joint_status->ferror = joint->ferror;
-	joint_status->ferror_high_mark = joint->ferror_high_mark;
-	joint_status->backlash = joint->backlash;
-	joint_status->max_pos_limit = joint->max_pos_limit;
-	joint_status->min_pos_limit = joint->min_pos_limit;
-	joint_status->min_ferror = joint->min_ferror;
-	joint_status->max_ferror = joint->max_ferror;
-	joint_status->home_offset = *(joint->home_offset);
-    }
-
-    for (dio = 0; dio < num_dio; dio++) {
-	emcmotStatus->synch_di[dio] = *(emcmot_hal_data->synch_di[dio]);
-	emcmotStatus->synch_do[dio] = *(emcmot_hal_data->synch_do[dio]);
-    }
-
-    for (aio = 0; aio < num_aio; aio++) {
-	emcmotStatus->analog_input[aio] = *(emcmot_hal_data->analog_input[aio]);
-	emcmotStatus->analog_output[aio] = *(emcmot_hal_data->analog_output[aio]);
-    }
-
-    /*! \todo FIXME - the rest of this function is stuff that was apparently
-       dropped in the initial move from emcmot.c to control.c.  I
-       don't know how much is still needed, and how much is baggage.
-    */
-
-    /* motion emcmotDebug->queue status */
-    emcmotStatus->depth = emcmotConfig->vtp->tpQueueDepth(emcmotQueue);
-    emcmotStatus->activeDepth = emcmotConfig->vtp->tpActiveDepth(emcmotQueue);
-
-    // only update motion id and real depth when running on primary queue
-    if (emcmotQueue == emcmotPrimQueue) {
-	emcmotStatus->depth = emcmotConfig->vtp->tpQueueDepth(emcmotQueue);
-	emcmotStatus->id = emcmotConfig->vtp->tpGetExecId(emcmotQueue);
-    emcmotStatus->tag = emcmotConfig->vtp->tpGetExecTag(&emcmotDebug->tp);
-    } else {
-	// pretend we're doing something so task keeps
-	// waiting for motion
-	emcmotStatus->depth = 1;
-    }
-    emcmotStatus->pause_state = *(emcmot_hal_data->pause_state);
-    emcmotStatus->motionType = emcmotConfig->vtp->tpGetMotionType(emcmotQueue);
-    emcmotStatus->queueFull = emcmotConfig->vtp->tcqFull(&emcmotQueue->queue);
-
-    /* check to see if we should pause in order to implement
-       single emcmotDebug->stepping */
-    if (emcmotDebug->stepping &&
-	*emcmot_hal_data->pause_state == PS_RUNNING &&
-	emcmotDebug->idForStep != emcmotStatus->id) {
-	// defer the actual pause to the pause FSM since we're
-	// switching motion queues - do this in one place only
-	emcmotDebug->stepping = 0;
-	emcmotStatus->pause_state = *(emcmot_hal_data->pause_state) = PS_PAUSING_FOR_STEP; // enter pause asap
-    }
-#ifdef WATCH_FLAGS
-    /*! \todo FIXME - this is for debugging */
-    if ( old_motion_flag != emcmotStatus->motionFlag ) {
-	rtapi_print ( "Motion flag %04X -> %04X\n", old_motion_flag, emcmotStatus->motionFlag );
-	old_motion_flag = emcmotStatus->motionFlag;
-    }
 #endif
 }
 

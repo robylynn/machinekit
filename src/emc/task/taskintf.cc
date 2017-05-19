@@ -692,6 +692,11 @@ int emcTrajSetMode(int mode)
 	emcmotCommand.command = EMCMOT_COORD;
 	return usrmotWriteEmcmotCommand(&emcmotCommand);
 
+	// ROBY: Adding stuff we think will work
+    case EMC_TRAJ_MODE_DIRECT:
+    emcmotCommand.command = EMCMOT_DIRECT;
+    return usrmotWriteEmcmotCommand(&emcmotCommand);
+
     case EMC_TRAJ_MODE_TELEOP:
 	emcmotCommand.command = EMCMOT_TELEOP;
 	return usrmotWriteEmcmotCommand(&emcmotCommand);

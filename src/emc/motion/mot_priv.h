@@ -352,6 +352,11 @@ extern void reportError(const char *fmt, ...) __attribute((format(printf,1,2)));
 
 #define SET_MOTION_TELEOP_FLAG(fl) if (fl) emcmotStatus->motionFlag |= EMCMOT_MOTION_TELEOP_BIT; else emcmotStatus->motionFlag &= ~EMCMOT_MOTION_TELEOP_BIT;
 
+//ROBY: Flags for SP run
+#define GET_MOTION_DIRECT_FLAG() (emcmotStatus->motionFlag & EMCMOT_MOTION_DIRECT_BIT ? 1 : 0)
+
+#define SET_MOTION_DIRECT_FLAG(fl) if (fl) emcmotStatus->motionFlag |= EMCMOT_MOTION_DIRECT_BIT; else emcmotStatus->motionFlag &= ~EMCMOT_MOTION_DIRECT_BIT;
+
 #define GET_MOTION_INPOS_FLAG() (emcmotStatus->motionFlag & EMCMOT_MOTION_INPOS_BIT ? 1 : 0)
 
 #define SET_MOTION_INPOS_FLAG(fl) if (fl) emcmotStatus->motionFlag |= EMCMOT_MOTION_INPOS_BIT; else emcmotStatus->motionFlag &= ~EMCMOT_MOTION_INPOS_BIT;

@@ -1,0 +1,180 @@
+Verbose mode on
+RUN_IN_PLACE=yes
+LINUXCNC_DIR=
+LINUXCNC_BIN_DIR=/home/machinekit/Desktop/machineKit/bin
+LINUXCNC_TCL_DIR=/home/machinekit/Desktop/machineKit/tcl
+LINUXCNC_SCRIPT_DIR=
+LINUXCNC_RTLIB_DIR=/home/machinekit/Desktop/machineKit/rtlib
+LINUXCNC_CONFIG_DIR=
+LINUXCNC_LANG_DIR=/home/machinekit/Desktop/machineKit/src/objects
+INIVAR=/home/machinekit/Desktop/machineKit/libexec/inivar
+HALCMD=halcmd
+LINUXCNC_EMCSH=/usr/bin/wish8.5
+MACHINEKIT - 0.1
+Machine configuration directory is '/home/machinekit/Desktop/machineKit/scripts/../configs/sim/axis'
+Machine configuration file is 'axis_9axis.ini'
+INIFILE=/home/machinekit/Desktop/machineKit/scripts/../configs/sim/axis/axis_9axis.ini
+PARAMETER_FILE=sim-9axis.var
+TASK=milltask
+HALUI=halui
+DISPLAY=axis
+Starting Machinekit...
+Starting Machinekit server program: linuxcncsvr
+Loading Real Time OS, RTAPI, and HAL_LIB modules
+Starting Machinekit IO program: io
+io started
+halcmd loadusr io started
+Starting HAL User Interface program: halui
+(time=1494001343.974123,pid=8282): Registering server on TCP port 5005.
+(time=1494001343.974381,pid=8282): running server for TCP port 5005 (connection_socket = 3).
+Starting TASK program: milltask
+task pid=8363
+Starting DISPLAY program: axis
+task: machine: 'Machinekit-HAL-SIM-AXIS'  version 'unknown'
+emcTaskOnce: Python plugin configured
+emcTaskOnce: extract(task_instance): KeyError: ('task',)
+
+emcTaskOnce: no Python Task() instance available, using default iocontrol-based task methods
+emcTaskInit: using builtin interpreter
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_TERM_COND}) : list_size=1, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=168,type=EMC_TRAJ_SET_G5X}) : list_size=2, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=160,type=EMC_TRAJ_SET_G92}) : list_size=3, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=96,type=EMC_TRAJ_SET_ROTATION}) : list_size=4, line_number=0
+emcTaskPlanInit() returned 0
+emcTaskInit: adding user-defined function ../../nc_files//M101
+emcTaskInit: adding user-defined function ../../nc_files//M104
+emcTaskInit: adding user-defined function ../../nc_files//M106
+emcTaskInit: adding user-defined function ../../nc_files//M107
+emcTaskInit: adding user-defined function ../../nc_files//M109
+emcTaskInit: adding user-defined function ../../nc_files//M140
+emcTaskInit: adding user-defined function ../../nc_files//M190
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+NML_INTERP_LIST::append(nml_msg_ptr{size=104,type=EMC_TRAJ_SET_TERM_COND}) : list_size=2, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=168,type=EMC_TRAJ_SET_G5X}) : list_size=3, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=160,type=EMC_TRAJ_SET_G92}) : list_size=4, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=96,type=EMC_TRAJ_SET_ROTATION}) : list_size=5, line_number=0
+emcTaskPlanInit() returned 0
+Issuing EMC_TASK_PLAN_SET_BLOCK_DELETE -- 	 (+518,+24,    +1,\001,)
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TRAJ_SET_TERM_COND -- 	 (+222,+104,    +0,    +2,0.000000,)
+Issuing EMC_TRAJ_SET_G5X -- 	 (+224,+168,    +0,    +1,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,)
+Issuing EMC_TRAJ_SET_G92 -- 	 (+227,+160,    +0,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,)
+Issuing EMC_TRAJ_SET_ROTATION -- 	 (+226,+96,    +0,0.000000,)
+Issuing EMC_TASK_PLAN_SET_OPTIONAL_STOP -- 	 (+517,+24,    +2,\000,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,    +3,    +3,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,    +4,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_OPEN -- 	 (+506,+280,    +5,/home/machinekit/Desktop/machineKit/paths/lines.ngc,)
+emcTaskPlanOpen(/home/machinekit/Desktop/machineKit/paths/lines.ngc) returned 0
+Issuing EMC_TRAJ_SET_SCALE -- 	 (+209,+96,    +6,1.000000,)
+Issuing EMC_TRAJ_SET_RAPID_SCALE -- 	 (+238,+96,    +7,1.000000,)
+Issuing EMC_TRAJ_SET_SPINDLE_SCALE -- 	 (+233,+96,    +8,1.000000,)
+Issuing EMC_TRAJ_SET_MAX_VELOCITY -- 	 (+207,+96,    +9,1.200000,)
+Issuing EMC_TRAJ_SET_SPINDLE_SCALE -- 	 (+233,+96,   +10,1.000000,)
+Issuing EMC_TRAJ_SET_RAPID_SCALE -- 	 (+238,+96,   +11,1.000000,)
+Issuing EMC_TRAJ_SET_SCALE -- 	 (+209,+96,   +12,1.000000,)
+Issuing EMC_TASK_SET_STATE -- 	 (+505,+24,   +13,    +2,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+emcTaskPlanClose() called at emc/task/emctask.cc:216
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TASK_SET_STATE -- 	 (+505,+24,   +14,    +4,)
+Issuing EMC_TASK_SET_MODE -- 	 (+504,+24,   +15,    +1,)
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+NML_INTERP_LIST::append(nml_msg_ptr{size=24,type=EMC_TASK_PLAN_SYNCH}) : list_size=1, line_number=0
+Issuing EMC_TASK_PLAN_SYNCH -- 	 (+516,+24,    +0,)
+emcTaskPlanSynch() returned 0
+Issuing EMC_TRAJ_SET_TELEOP_ENABLE -- 	 (+230,+96,   +16,    +0,)
+Issuing EMC_AXIS_HOME -- 	 (+123,+24,   +17,    -1,)
+Shutting down and cleaning up Machinekit...
+Killing task linuxcncsvr, PID=8282
+(time=1494001368.494088,pid=8282): Deleting 5 channels from the NML_Main_Channel_List.
+(time=1494001368.494143,pid=8282): Deleting emcCommand NML channel from NML_Main_Channel_List.
+(time=1494001368.494174,pid=8282): deleting NML (1)
+(time=1494001368.494202,pid=8282):  delete (CMS *) 0x15b4280;
+(time=1494001368.494234,pid=8282): rcs_shm_close(shm->key=1001(0x3E9),shm->size=8192(0x2000),shm->addr=0x7f96ad7b6000)
+(time=1494001368.494772,pid=8282): deleting CMS (emcCommand)
+(time=1494001368.494807,pid=8282): free( data = 0x15b4da0);
+(time=1494001368.494837,pid=8282): Leaving ~CMS()
+(time=1494001368.494865,pid=8282):  CMS::delete(0x15b4280)
+(time=1494001368.494892,pid=8282):  CMS::delete successful.
+(time=1494001368.494919,pid=8282): Leaving ~NML()
+(time=1494001368.494946,pid=8282): NML channel deleted from NML_Main_Channel_List
+(time=1494001368.494973,pid=8282): Deleting emcStatus NML channel from NML_Main_Channel_List.
+(time=1494001368.495001,pid=8282): deleting NML (2)
+(time=1494001368.495027,pid=8282):  delete (CMS *) 0x15ba130;
+(time=1494001368.495066,pid=8282): rcs_shm_close(shm->key=1002(0x3EA),shm->size=16384(0x4000),shm->addr=0x7f96ad7b2000)
+(time=1494001368.495100,pid=8282): deleting CMS (emcStatus)
+(time=1494001368.495131,pid=8282): free( data = 0x15bac50);
+(time=1494001368.495177,pid=8282): Leaving ~CMS()
+(time=1494001368.495204,pid=8282):  CMS::delete(0x15ba130)
+(time=1494001368.495231,pid=8282):  CMS::delete successful.
+(time=1494001368.495258,pid=8282): Leaving ~NML()
+(time=1494001368.495284,pid=8282): NML channel deleted from NML_Main_Channel_List
+(time=1494001368.495311,pid=8282): Deleting emcError NML channel from NML_Main_Channel_List.
+(time=1494001368.495339,pid=8282): deleting NML (3)
+(time=1494001368.495366,pid=8282):  delete (CMS *) 0x15bf330;
+(time=1494001368.495394,pid=8282): rcs_shm_close(shm->key=1003(0x3EB),shm->size=8192(0x2000),shm->addr=0x7f96ad7b0000)
+(time=1494001368.495427,pid=8282): deleting CMS (emcError)
+(time=1494001368.495458,pid=8282): free( data = 0x15bfe60);
+(time=1494001368.495485,pid=8282): Leaving ~CMS()
+(time=1494001368.495512,pid=8282):  CMS::delete(0x15bf330)
+(time=1494001368.495539,pid=8282):  CMS::delete successful.
+(time=1494001368.495566,pid=8282): Leaving ~NML()
+(time=1494001368.495592,pid=8282): NML channel deleted from NML_Main_Channel_List
+(time=1494001368.495619,pid=8282): Deleting toolCmd NML channel from NML_Main_Channel_List.
+(time=1494001368.495639,pid=8282): deleting NML (4)
+(time=1494001368.495640,pid=8282):  delete (CMS *) 0x15c24b0;
+(time=1494001368.495640,pid=8282): rcs_shm_close(shm->key=1004(0x3EC),shm->size=1024(0x400),shm->addr=0x7f96ad7af000)
+(time=1494001368.495641,pid=8282): deleting CMS (toolCmd)
+(time=1494001368.495641,pid=8282): free( data = 0x15c2f60);
+(time=1494001368.495641,pid=8282): Leaving ~CMS()
+(time=1494001368.495656,pid=8282):  CMS::delete(0x15c24b0)
+(time=1494001368.495683,pid=8282):  CMS::delete successful.
+(time=1494001368.495710,pid=8282): Leaving ~NML()
+(time=1494001368.495737,pid=8282): NML channel deleted from NML_Main_Channel_List
+(time=1494001368.495756,pid=8282): Deleting toolSts NML channel from NML_Main_Channel_List.
+(time=1494001368.495785,pid=8282): deleting NML (5)
+(time=1494001368.495811,pid=8282):  delete (CMS *) 0x15c39e0;
+(time=1494001368.495839,pid=8282): rcs_shm_close(shm->key=1005(0x3ED),shm->size=8192(0x2000),shm->addr=0x7f96ad7ad000)
+(time=1494001368.495872,pid=8282): deleting CMS (toolSts)
+(time=1494001368.495903,pid=8282): free( data = 0x15c4490);
+(time=1494001368.495930,pid=8282): Leaving ~CMS()
+(time=1494001368.495957,pid=8282):  CMS::delete(0x15c39e0)
+(time=1494001368.495983,pid=8282):  CMS::delete successful.
+(time=1494001368.496010,pid=8282): Leaving ~NML()
+(time=1494001368.496042,pid=8282): NML channel deleted from NML_Main_Channel_List
+(time=1494001368.496071,pid=8282): deleting NML (1)
+(time=1494001368.496099,pid=8282): Leaving ~NML()
+(time=1494001368.496125,pid=8282): NML::operater delete(0x15b4010)
+(time=1494001368.496152,pid=8282): NML channel deleted from Dynamically_Allocated_NML_Objects
+(time=1494001368.496180,pid=8282): deleting NML (2)
+(time=1494001368.496768,pid=8282): Leaving ~NML()
+(time=1494001368.496796,pid=8282): NML::operater delete(0x15b9f60)
+(time=1494001368.496824,pid=8282): NML channel deleted from Dynamically_Allocated_NML_Objects
+(time=1494001368.496853,pid=8282): deleting NML (3)
+(time=1494001368.496880,pid=8282): Leaving ~NML()
+(time=1494001368.496906,pid=8282): NML::operater delete(0x15bf100)
+(time=1494001368.496933,pid=8282): NML channel deleted from Dynamically_Allocated_NML_Objects
+(time=1494001368.496960,pid=8282): deleting NML (4)
+(time=1494001368.496987,pid=8282): Leaving ~NML()
+(time=1494001368.497012,pid=8282): NML::operater delete(0x15c22e0)
+(time=1494001368.497040,pid=8282): NML channel deleted from Dynamically_Allocated_NML_Objects
+(time=1494001368.497067,pid=8282): deleting NML (5)
+(time=1494001368.497093,pid=8282): Leaving ~NML()
+(time=1494001368.497119,pid=8282): NML::operater delete(0x15c3810)
+(time=1494001368.497164,pid=8282): NML channel deleted from Dynamically_Allocated_NML_Objects
+Killing task milltask, PID=8363
+Removing HAL_LIB, RTAPI, and Real Time OS modules
+Removing NML shared memory segments
+Cleanup done

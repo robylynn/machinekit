@@ -241,7 +241,9 @@ int emcTaskSetMode(int mode)
 
     case EMC_TASK_MODE_AUTO:
 	// go to auto mode
-	emcTrajSetMode(EMC_TRAJ_MODE_COORD);
+	//ROBY CHANGE DIRECT MODE from EMC_TRAJ_MODE_COORD
+    emcTrajSetMode(EMC_TRAJ_MODE_COORD);
+    //emcTrajSetMode(EMC_TRAJ_MODE_DIRECT);
 	emcTaskAbort();
 	emcTaskPlanSynch();
 	mdiOrAuto = EMC_TASK_MODE_AUTO;
