@@ -122,6 +122,8 @@ extern "C" {
     EMCMOT_FREE = 14,              /* set mode to free (joint) motion */
     EMCMOT_COORD = 15,             /* set mode to coordinated motion */
     EMCMOT_TELEOP = 16,            /* set mode to teleop */
+    //ROBY ADD SP MODE
+    EMCMOT_DIRECT = 65,
 
     EMCMOT_SPINDLE_SCALE = 17,     /* set scale factor for spindle speed */
     EMCMOT_SS_ENABLE = 18,         /* enable/disable scaling the spindle speed */
@@ -293,6 +295,8 @@ extern "C" {
 #define EMCMOT_MOTION_COORD_BIT       0x0004
 #define EMCMOT_MOTION_ERROR_BIT       0x0008
 #define EMCMOT_MOTION_TELEOP_BIT      0x0010
+//ROBY
+#define EMCMOT_MOTION_DIRECT_BIT	  0x0020
 
 /* joint flag type */
     typedef unsigned short EMCMOT_JOINT_FLAG;
@@ -410,7 +414,9 @@ Suggestion: Split this in to an Error and a Status flag register..
 	EMCMOT_MOTION_DISABLED = 0,
 	EMCMOT_MOTION_FREE,
 	EMCMOT_MOTION_TELEOP,
-	EMCMOT_MOTION_COORD
+	EMCMOT_MOTION_COORD,
+	//ROBY: Add SP mode here
+	EMCMOT_MOTION_DIRECT
     } motion_state_t;
 
 /* states for homing */

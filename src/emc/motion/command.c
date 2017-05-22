@@ -516,6 +516,7 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
 	    rtapi_print_msg(RTAPI_MSG_DBG, "FREE");
 	    emcmotDebug->coordinating = 0;
 	    emcmotDebug->teleoperating = 0;
+	    emcmotDebug->directing = 0;
 	    break;
 
 	case EMCMOT_COORD:
@@ -529,6 +530,7 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
 	    rtapi_print_msg(RTAPI_MSG_DBG, "COORD");
 	    emcmotDebug->coordinating = 1;
 	    emcmotDebug->teleoperating = 0;
+	    emcmotDebug->directing = 0;
 	    if (kinType != KINEMATICS_IDENTITY) {
 		if (!checkAllHomed()) {
 		    reportError
@@ -560,6 +562,17 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
 
 	    }
 	    break;
+
+	case EMCMOT_DIRECT:
+		// ROBY ADD SP MODE
+		emcmotDebug->directing = 1;
+		if (!checkAllHomed()) {
+			reportError
+			(_("all joints must be homed before going into direct mode"));
+			emcmotDebug->directing = 0;
+			break;
+		}
+		break;
 
 	case EMCMOT_SET_NUM_AXES: //FIXME-AJ: we'll want to rename this to EMCMOT_SET_NUM_JOINTS
 	    /* set the global NUM_JOINTS, which must be between 1 and
@@ -1216,6 +1229,7 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
 	    if (kinType == KINEMATICS_INVERSE_ONLY) {
 		emcmotDebug->teleoperating = 0;
 		emcmotDebug->coordinating = 0;
+		emcmotDebug->directing = 0;
 	    }
 	    break;
 
@@ -1232,6 +1246,7 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
 		if (kinType == KINEMATICS_INVERSE_ONLY) {
 		    emcmotDebug->teleoperating = 0;
 		    emcmotDebug->coordinating = 0;
+		    emcmotDebug->directing = 0;
 		}
 	    }
 	    break;

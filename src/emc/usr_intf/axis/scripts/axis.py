@@ -3395,7 +3395,7 @@ elif lathe:
     initialfile = os.path.join(BASE, "share", "axis", "images","axis-lathe.ngc")
     addrecent = False
 else:
-    initialfile = os.path.join(BASE, "share", "axis", "images", "axis.ngc")
+    initialfile = os.path.join(BASE, "paths", "lines.ngc")
     addrecent = False
 
 if os.path.exists(initialfile):

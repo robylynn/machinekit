@@ -290,7 +290,8 @@ struct PM_CARTESIAN;
 enum EMC_TASK_MODE_ENUM {
     EMC_TASK_MODE_MANUAL = 1,
     EMC_TASK_MODE_AUTO = 2,
-    EMC_TASK_MODE_MDI = 3
+    EMC_TASK_MODE_MDI = 3,
+    EMC_TASK_MODE_DIRECT = 4
 };
 
 // types for EMC_TASK state
@@ -326,7 +327,8 @@ enum EMC_TASK_INTERP_ENUM {
 enum EMC_TRAJ_MODE_ENUM {
     EMC_TRAJ_MODE_FREE = 1,	// independent-axis motion,
     EMC_TRAJ_MODE_COORD = 2,	// coordinated-axis motion,
-    EMC_TRAJ_MODE_TELEOP = 3	// velocity based world coordinates motion,
+    EMC_TRAJ_MODE_TELEOP = 3,	// velocity based world coordinates motion,
+    EMC_TRAJ_MODE_DIRECT = 4
 };
 
 // types for emcIoAbort() reasons

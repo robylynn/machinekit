@@ -88,6 +88,7 @@ typedef struct emcmot_debug_t {
 	int enabling;		/* starts up disabled */
 	int coordinating;	/* starts up in free mode */
 	int teleoperating;	/* starts up in free mode */
+	int directing;         /* ROBY: we are adding this for tracking when we are in direct mode */
 #if 0
 	int wasOnLimit;		/* non-zero means we already aborted
 				   everything due to a soft limit, and need
