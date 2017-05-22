@@ -291,6 +291,7 @@ enum EMC_TASK_MODE_ENUM {
     EMC_TASK_MODE_MANUAL = 1,
     EMC_TASK_MODE_AUTO = 2,
     EMC_TASK_MODE_MDI = 3,
+    EMC_TASK_MODE_DIRECT = 4
 };
 
 // types for EMC_TASK state

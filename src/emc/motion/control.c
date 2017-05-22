@@ -1139,10 +1139,10 @@ static void set_operating_mode(void) {
 			}
 		}
 		/* Check for entering directing mode */
-		/*if (emcmotDebug->directing && !GET_MOTION_DIRECT_FLAG()) {
+		if (emcmotDebug->directing && !GET_MOTION_DIRECT_FLAG()) {
 				SET_MOTION_DIRECT_FLAG(1);
 				SET_MOTION_ERROR_FLAG(0);
-     	}*/
+     	}
 		else {
 			/* check for entering coordinated mode */
 			if (emcmotDebug->coordinating && !GET_MOTION_COORD_FLAG()) {
@@ -1524,7 +1524,7 @@ static void get_pos_cmds(long period) {
 
 			static double currentPosX = 0.001;
 			static double currentPosY = 0.0;
-			//ROBY: inject random shit. After IK, this is coarse_pos
+			//ROBY: inject random stuff. After IK, this is coarse_pos
 			if (emcmotStatus->carte_pos_cmd.tran.x > 0.001) {
 				//currentPosX = rad*cos(th);
 				if (tt > 0.5) {
