@@ -248,6 +248,7 @@ int Interp::write_state_tag(block_pointer block,
 
     state.flags[GM_FLAG_DISTANCE_MODE] = (settings->distance_mode == MODE_ABSOLUTE);
     state.flags[GM_FLAG_FEED_INVERSE_TIME] = (settings->feed_mode == INVERSE_TIME);
+    state.flags[GM_FLAG_FEED_DIRECT] = (settings->feed_mode == DIRECT);
     state.flags[GM_FLAG_FEED_UPM] = (settings->feed_mode == UNITS_PER_MINUTE);
 
 

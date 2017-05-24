@@ -416,7 +416,7 @@ Suggestion: Split this in to an Error and a Status flag register..
 	EMCMOT_MOTION_TELEOP,
 	EMCMOT_MOTION_COORD,
 	//ROBY: Add SP mode here
-	EMCMOT_MOTION_DIRECT
+	EMCMOT_MOTION_DIRECT = 7,
     } motion_state_t;
 
 /* states for homing */

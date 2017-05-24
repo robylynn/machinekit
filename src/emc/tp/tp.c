@@ -3056,11 +3056,15 @@ int tpRunCycle(TP_STRUCT * const tp, long period) {
 	tcClearFlags(tc);
 	tcClearFlags(nexttc);
 	// Update the current tc
-	if (tc->splitting) {
-		tpHandleSplitCycle(tp, tc, nexttc);
-	} else {
-		tpHandleRegularCycle(tp, tc, nexttc);
+	if (tc->canon_motion_type != 7) {
+		if (tc->splitting) {
+			tpHandleSplitCycle(tp, tc, nexttc);
+		} else {
+			tpHandleRegularCycle(tp, tc, nexttc);
+		}
 	}
+	//} else {
+    //}
 
 	// Added by Roby/Mukul
 	double mag;

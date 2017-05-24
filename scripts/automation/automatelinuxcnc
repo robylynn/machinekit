@@ -2,9 +2,9 @@ TE=$(date +"%Y%m%d%H%M")
 linuxcncdb &
 sleep 3
 win=$(xdotool search --name 'Machinekit-HAL' windowactivate)
-xdotool key F1
+xdotool key --windowid win F1
 sleep 0.2
-xdotool key F2
+xdotool key --windowid win F2
 sleep 0.2
-xdotool key Ctrl+Home
+xdotool key --windowid win Ctrl+Home
 sleep 5

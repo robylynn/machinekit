@@ -94,7 +94,7 @@ static inline bool equal(double a, double b)
 #define MAX_EMS  4
 
 // feed_mode
-enum feed_mode { UNITS_PER_MINUTE=0, INVERSE_TIME=1, UNITS_PER_REVOLUTION=2 };
+enum feed_mode { UNITS_PER_MINUTE=0, INVERSE_TIME=1, UNITS_PER_REVOLUTION=2, DIRECT=3 };
 
 // cutter radius compensation mode, 0 or false means none
 // not using CANON_SIDE since interpreter handles cutter radius comp
@@ -168,6 +168,7 @@ enum SPINDLE_MODE { CONSTANT_RPM, CONSTANT_SURFACE };
 // G Codes are symbolic to be dialect-independent in source code
 #define G_0      0
 #define G_1     10
+#define G_1_1	11
 #define G_2     20
 #define G_3     30
 #define G_4     40

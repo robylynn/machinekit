@@ -56,7 +56,7 @@ group  0 = {g4,g10,g28,g30,g52,g53,g92,g92.1,g92.2,g92.3} - NON-MODAL
             dwell, setup, return to ref1, return to ref2,
             local coordinate system, motion in machine coordinates,
             set and unset axis offsets
-group  1 = {g0,g1,g2,g3,g33,g33.1,g38.2,g38.3,g38.4,g38.5,g73,g76,g80,
+group  1 = {g0,g1,g1.1, g2,g3,g33,g33.1,g38.2,g38.3,g38.4,g38.5,g73,g76,g80,
             g81,g82,g83,g84,g85,g86,g87,g88,g89} - motion
 group  2 = {g17,g17.1,g18,g18.1,g19,g19.1}   - plane selection
 group  3 = {g90,g91}       - distance mode
@@ -74,7 +74,7 @@ group 15 = {G07,G08}       - lathe diameter mode
 // This stops indent from reformatting the following code.
 // *INDENT-OFF*
 const int Interp::_gees[] = {
-/*   0 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+/*   0 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1, 1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  20 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  40 */ //0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  40 */   0,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1, 1, 1, 0,-1,-1,-1,-1,-1,-1,

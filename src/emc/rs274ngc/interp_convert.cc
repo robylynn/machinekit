@@ -3537,7 +3537,7 @@ int Interp::convert_motion(int motion,   //!< g_code for a line, arc, canned cyc
     int n;
     if(ai) n=3; else if(bi) n=4; else n=5;
     CHP(convert_straight_indexer(n, block, settings));
-  } else if ((motion == G_0) || (motion == G_1) || (motion == G_33) || (motion == G_33_1) || (motion == G_76)) {
+  } else if ((motion == G_0) || (motion == G_1) || (motion == G_1_1) || (motion == G_33) || (motion == G_33_1) || (motion == G_76)) {
     CHP(convert_straight(motion, block, settings));
   } else if ((motion == G_3) || (motion == G_2)) {
     CHP(convert_arc(motion, block, settings));
@@ -4492,7 +4492,7 @@ int Interp::convert_straight(int move,   //!< either G_0 or G_1
 
   settings->arc_not_allowed = false;
 
-  if (move == G_1) {
+  if (move == G_1 || move == G_1_1) {
     if (settings->feed_mode == UNITS_PER_MINUTE) {
       CHKS((settings->feed_rate == 0.0), NCE_CANNOT_DO_G1_WITH_ZERO_FEED_RATE);
     } else if (settings->feed_mode == UNITS_PER_REVOLUTION) {
@@ -4513,6 +4513,10 @@ int Interp::convert_straight(int move,   //!< either G_0 or G_1
                                  AA_end, BB_end, CC_end,
                                  u_end, v_end, w_end,
                                  block, settings);
+  }
+  if ( move == G_1_1 ) {
+  	settings->feed_mode =  DIRECT;
+  	enqueue_SET_FEED_MODE( DIRECT );
   }
 
   // Create a state tag and dump it to canon
@@ -4549,7 +4553,7 @@ int Interp::convert_straight(int move,   //!< either G_0 or G_1
     settings->current_x = end_x;
     settings->current_y = end_y;
     settings->current_z = end_z;
-  } else if (move == G_1) {
+  } else if (move == G_1 || move == G_1_1) {
     STRAIGHT_FEED(block->line_number, end_x, end_y, end_z,
                   AA_end, BB_end, CC_end,
                   u_end, v_end, w_end);

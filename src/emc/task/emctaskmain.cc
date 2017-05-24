@@ -1020,6 +1020,7 @@ static int emcTaskPlan(void)
 			break;		// case EMC_TASK_MODE_MANUAL
 
 		case EMC_TASK_MODE_AUTO:	// ON, AUTO
+		case EMC_TASK_MODE_DIRECT:
 			switch (emcStatus->task.interpState) {
 			case EMC_TASK_INTERP_IDLE:	// ON, AUTO, IDLE
 			switch (type) {
@@ -1810,6 +1811,10 @@ static int emcTaskIssueCommand(NMLmsg * cmd)
     case EMC_TRAJ_LINEAR_MOVE_TYPE:
     emcTrajUpdateTag(((EMC_TRAJ_LINEAR_MOVE *) cmd)->tag);
 	emcTrajLinearMoveMsg = (EMC_TRAJ_LINEAR_MOVE *) cmd;
+	// TODO msati3: Find where linear move type is set and set feed mode there
+	if (emcTrajLinearMoveMsg->feed_mode == DIRECT) {
+		emcTrajLinearMoveMsg->type = EMC_MOTION_TYPE_DIRECT;
+	}
         retval = emcTrajLinearMove(emcTrajLinearMoveMsg->end,
                                    emcTrajLinearMoveMsg->type, emcTrajLinearMoveMsg->vel,
                                    emcTrajLinearMoveMsg->ini_maxvel, emcTrajLinearMoveMsg->acc,
