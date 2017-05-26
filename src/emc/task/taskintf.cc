@@ -1009,8 +1009,12 @@ int emcTrajLinearMove(EmcPose end, int type, double vel, double ini_maxvel, doub
 	return 0;		// ignore it for now, just don't send it
     }
 #endif
-
-    emcmotCommand.command = EMCMOT_SET_LINE;
+    if (type == EMC_MOTION_TYPE_DIRECT) {
+    	emcmotCommand.command = EMCMOT_DIRECT_POINT;
+    }
+    else {
+    	emcmotCommand.command = EMCMOT_SET_LINE;
+    }
 
     emcmotCommand.pos = end;
 

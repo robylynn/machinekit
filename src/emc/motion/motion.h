@@ -139,6 +139,7 @@ extern "C" {
     EMCMOT_JOG_INCR = 27,          /* incremental jog */
     EMCMOT_JOG_ABS = 28,           /* absolute jog */
     EMCMOT_SET_LINE = 29,          /* queue up a linear move */
+    EMCMOT_DIRECT_POINT = 66,	   /* queue direct point from SP */
     EMCMOT_SET_CIRCLE = 30,        /* queue up a circular move */
     EMCMOT_SET_TELEOP_VECTOR = 31, /* Move at a given velocity but in
                                       world Cartesian coordinates, not

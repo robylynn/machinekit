@@ -1823,6 +1823,12 @@ int tpAddLine(TP_STRUCT * const tp, EmcPose end, int canon_motion_type,
 	return retval;
 }
 
+int tpAddDirectPoint(TP_STRUCT * const tp, EmcPose end, int canon_motion_type,
+		double vel, double ini_maxvel, double acc, unsigned char enables,
+		char atspeed, int indexrotary, struct state_tag_t tag) {
+
+}
+
 /**
  * Adds a circular (circle, arc, helix) move from the end of the
  * last move to this new position.

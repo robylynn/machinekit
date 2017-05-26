@@ -922,7 +922,9 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
             emcmotConfig->vtp->tpSetSpindleSync(emcmotQueue, emcmotCommand->spindlesync,
 						emcmotCommand->flags);
             break;
-
+    //ROBY Direct traj control from SP
+    case EMCMOT_DIRECT_POINT:
+    	rtapi_print_msg(RTAPI_MSG_DBG, "DIRECT_POINT");
 	case EMCMOT_SET_LINE:
 	    /* emcmotDebug->tp up a linear move */
 	    /* requires coordinated mode, enable off, not on limits */
