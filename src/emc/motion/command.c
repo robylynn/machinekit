@@ -918,13 +918,74 @@ int emcmotCommandHandler(void *arg, const hal_funct_args_t *fa)
 					     emcmotCommand->tolerance);
 	    break;
 
-        case EMCMOT_SET_SPINDLESYNC:
+    case EMCMOT_SET_SPINDLESYNC:
             emcmotConfig->vtp->tpSetSpindleSync(emcmotQueue, emcmotCommand->spindlesync,
 						emcmotCommand->flags);
             break;
-    //ROBY Direct traj control from SP
     case EMCMOT_DIRECT_POINT:
-    	rtapi_print_msg(RTAPI_MSG_DBG, "DIRECT_POINT");
+    	/* emcmotDebug->tp up a linear move */
+		/* requires coordinated mode, enable off, not on limits */
+		rtapi_print_msg(RTAPI_MSG_DBG, "DIRECT_POINT");
+		if (!GET_MOTION_COORD_FLAG() || !GET_MOTION_ENABLE_FLAG()) {
+		reportError
+			(_("need to be enabled, in coord mode for linear move"));
+		emcmotStatus->commandStatus = EMCMOT_COMMAND_INVALID_COMMAND;
+		SET_MOTION_ERROR_FLAG(1);
+		break;
+		} else if (!inRange(emcmotCommand->pos, emcmotCommand->id, "Linear")) {
+		emcmotStatus->commandStatus = EMCMOT_COMMAND_INVALID_PARAMS;
+		abort_and_switchback(); // tpAbort(emcmotQueue);
+		SET_MOTION_ERROR_FLAG(1);
+		break;
+		} else if (!limits_ok()) {
+		reportError(_("can't do linear move with limits exceeded"));
+		emcmotStatus->commandStatus = EMCMOT_COMMAND_INVALID_PARAMS;
+		abort_and_switchback(); // tpAbort(emcmotQueue);
+		SET_MOTION_ERROR_FLAG(1);
+		break;
+		}
+		if(emcmotStatus->atspeed_next_feed && is_feed_type(emcmotCommand->motion_type) ) {
+			issue_atspeed = 1;
+			emcmotStatus->atspeed_next_feed = 0;
+		}
+		if(!is_feed_type(emcmotCommand->motion_type) && emcmotStatus->spindle.css_factor) {
+			emcmotStatus->atspeed_next_feed = 1;
+		}
+	    /* append it to the emcmotDebug->tp */
+		emcmotConfig->vtp->tpSetId(&emcmotDebug->tp, emcmotCommand->id);
+		int res_addDirectPoint = emcmotConfig->vtp->tpAddDirectPoint(&emcmotDebug->tp,
+							   emcmotCommand->pos,
+							   emcmotCommand->motion_type,
+							   emcmotCommand->vel,
+							   emcmotCommand->ini_maxvel,
+							   emcmotCommand->acc,
+							   emcmotStatus->enables_new,
+							   issue_atspeed,
+							   emcmotCommand->turn,
+							   emcmotCommand->tag);
+		if (res_addDirectPoint != 0) {
+			reportError(_("can't add direct point move at line %d, error code %d"),
+					emcmotCommand->id, res_addDirectPoint);
+			emcmotStatus->commandStatus = EMCMOT_COMMAND_BAD_EXEC;
+			emcmotConfig->vtp->tpAbort(&emcmotDebug->tp);
+			SET_MOTION_ERROR_FLAG(1);
+			break;
+		} else if (res_addDirectPoint != 0) {
+			//TODO make this hand-shake more explicit
+			//KLUDGE Non fatal error, need to restore state so that the next
+			//line properly handles at_speed
+			if (issue_atspeed) {
+				emcmotStatus->atspeed_next_feed = 1;
+			}
+		} else {
+		SET_MOTION_ERROR_FLAG(0);
+		/* set flag that indicates all joints need rehoming, if any
+		   joint is moved in joint mode, for machines with no forward
+		   kins */
+		rehomeAll = 1;
+		}
+		break;
+
 	case EMCMOT_SET_LINE:
 	    /* emcmotDebug->tp up a linear move */
 	    /* requires coordinated mode, enable off, not on limits */

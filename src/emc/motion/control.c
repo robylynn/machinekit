@@ -1517,55 +1517,6 @@ static void get_pos_cmds(long period) {
 			/* gt new commanded traj pos */
 			emcmotConfig->vtp->tpGetPos(emcmotQueue,
 					&emcmotStatus->carte_pos_cmd);
-			/*
-			double dt = 0.001;
-			static double th = 0;
-			static double rad = 1;
-
-			static double currentPosX = 0.001;
-			static double currentPosY = 0.0;
-			//ROBY: inject random stuff. After IK, this is coarse_pos
-			if (emcmotStatus->carte_pos_cmd.tran.x > 0.001) {
-				//currentPosX = rad*cos(th);
-				if (tt > 0.5) {
-					jj++;
-					tt = 0;
-					if (jj > 240) {
-						jj = 0;
-					}
-				}
- 		        currentPosX = (xcoords[jj] + tt/0.5*(xcoords[jj+1]-xcoords[jj]));
-				emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
-				//currentPosY = rad*sin(th);
-				currentPosY = (ycoords[jj] + tt/0.5*(ycoords[jj+1]-ycoords[jj]));
-				emcmotStatus->carte_pos_cmd.tran.y = currentPosY;
-				tt += 0.001;
-				//emcmotStatus->requested_vel = 100;
-				//emcmotStatus->
-				//emcmotQueue->done = 0;
-				//emcmotQueue->currentPos.tran.x = 0.01;
-				//emcmotQueue->
-			}
-			*/
-				//th += (2*3.14*rad/2)*dt;
-//				if (currentPosX < 0.5) {
-//					currentPosX += 0.5 * 200 * dt * dt;
-//					currentPosX = rad*cos(th);
-//					emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
-//				} else if (currentPosX < 1.5) {
-//					//currentPosX += 0.1 * dt;
-//
-//					emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
-//				} else {
-//					currentPosY += 0.1 * dt;
-//					emcmotStatus->carte_pos_cmd.tran.x = currentPosX;
-//					emcmotStatus->carte_pos_cmd.tran.y = currentPosY;
-//				}
-//			}
-
-			//emcmotStatus->carte_pos_cmd.tran.x +=
-			//emcmotStatus->carte_pos_cmd.tran.x += -0.05 + (rand() % 100)/1000.0;
-			//}
 
 			/* OUTPUT KINEMATICS - convert to joints in local array */
 			emcmotConfig->vtk->kinematicsInverse(&emcmotStatus->carte_pos_cmd,
@@ -1724,7 +1675,6 @@ static void get_pos_cmds(long period) {
 			old_pos_cmd = joint->pos_cmd;
 			/* interpolate to get new one */
 			joint->pos_cmd = cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
-			//joint->pos_cmd = joint->coarse_pos+(rand()%3/300.f);//cubicInterpolate(&(joint->cubic), 0, 0, 0, 0);
 			joint->vel_cmd = (joint->pos_cmd - old_pos_cmd) * servo_freq;
 		}
 
@@ -2245,7 +2195,7 @@ static void output_to_hal(void) {
 		// ADDED BY MUKUL 4/20
 		if (joint_num < 9) {
 			log_joint_vel[joint_num] = *joint_data->joint_vel_cmd;
-			//log_joint_pos[joint_num] = *joint_data->joint_pos_cmd;
+			log_joint_pos[joint_num] = *joint_data->joint_pos_cmd;
 		}
 	} // while joint end
 	if ((*(emcmot_hal_data->program_line) != 0)

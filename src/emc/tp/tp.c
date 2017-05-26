@@ -1826,7 +1826,37 @@ int tpAddLine(TP_STRUCT * const tp, EmcPose end, int canon_motion_type,
 int tpAddDirectPoint(TP_STRUCT * const tp, EmcPose end, int canon_motion_type,
 		double vel, double ini_maxvel, double acc, unsigned char enables,
 		char atspeed, int indexrotary, struct state_tag_t tag) {
+	if (tpErrorCheck(tp) < 0) {
+		return TP_ERR_FAIL;
+	} tp_info_print("== AddLine ==\n");
 
+	// Initialize new tc struct for the line segment
+	TC_STRUCT tc = { 0 };
+	tcInit(&tc, TC_LINEAR, canon_motion_type, tp->cycleTime, enables, atspeed);
+	tc.tag = tag;
+
+	// Copy in motion parameters
+	tcSetupMotion(&tc, vel, ini_maxvel, acc);
+	// Setup any synced IO for this move
+	tpSetupSyncedIO(tp, &tc);
+	// Copy over state data from the trajectory planner
+	tcSetupState(&tc, tp);
+
+	// Setup line geometry
+	pmLine9Init(&tc.coords.line, &tp->goalPos, &end);
+	tc.target = pmLine9Target(&tc.coords.line);
+	if (tc.target < TP_POS_EPSILON) {
+		rtapi_print_msg(RTAPI_MSG_DBG,
+				"failed to create line id %d, zero-length segment\n",
+				tp->nextId);
+		return TP_ERR_ZERO_LENGTH;
+	}
+	tc.nominal_length = tc.target;
+	// For linear move, set rotary axis settings
+	tc.indexrotary = indexrotary;
+
+	int retval = tpAddSegmentToQueue(tp, &tc, true);
+	return retval;
 }
 
 /**
@@ -2738,6 +2768,50 @@ void tpToggleDIOs(TP_STRUCT const * const tp, TC_STRUCT * const tc) {
 }
 
 /**
+ * Do a complete update on one direct segment.
+ * Handles the majority of updates on a single segment for the current cycle.
+ */
+ STATIC int tpUpdateDirectCycle(TP_STRUCT * const tp, TC_STRUCT * const tc,
+ 		TC_STRUCT const * const nexttc) {
+
+ 	//placeholders for position for this update
+ 	EmcPose before;
+
+ 	//Store the current position due to this TC
+ 	tcGetPos(tc, &before);
+
+ 	// Update the start velocity if we're not blending yet
+ 	if (!tc->blending_next) {
+ 		tc->vel_at_blend_start = tc->currentvel;
+ 	}
+
+ 	// Run cycle update with stored cycle time
+ 	double acc = 0;
+ 	tpDebugCycleInfo(tp, tc, nexttc, acc);
+
+ 	// Consume a tc each step.
+ 	tc->progress = tc->target;
+ 	tc->remove = 1;
+
+ 	EmcPose displacement;
+
+ 	// Calculate displacement
+ 	tcGetPos(tc, &displacement);
+ 	emcPoseSelfSub(&displacement, &before);
+
+ 	//Store displacement (checking for valid pose)
+ 	int res_set = tpAddCurrentPos(tp, &displacement);
+
+ #ifdef TC_DEBUG
+ 	double mag;
+ 	emcPoseMagnitude(&displacement, &mag);
+ 	tc_debug_print("cycle movement = %f\n", mag);
+ #endif
+
+ 	return res_set;
+}
+
+/**
  * Send default values to status structure.
  */STATIC int tpUpdateInitialStatus(TP_STRUCT const * const tp) {
 	// Update queue length
@@ -2971,6 +3045,25 @@ STATIC int tpHandleRegularCycle(TP_STRUCT * const tp, TC_STRUCT * const tc,
 	return TP_ERR_OK;
 }
 
+STATIC int tpHandleDirectCycle(TP_STRUCT * const tp, TC_STRUCT * const tc,
+		TC_STRUCT * const nexttc) {
+	if (tc->remove) {
+		//Don't need to update since this segment is flagged for removal
+		return TP_ERR_NO_ACTION;
+	}
+	//Run with full cycle time
+	tc_debug_print("Normal cycle\n");
+	tc->cycle_time = tp->cycleTime;
+	tpUpdateDirectCycle(tp, tc, nexttc);
+
+	//Update status for a normal step
+	tpToggleDIOs(tp, tc);
+	tpUpdateMovementStatus(tp, tc);
+
+	return TP_ERR_OK;
+}
+
+
 /**
  * Calculate an updated goal position for the next timestep.
  * This is the brains of the operation. It's called every TRAJ period and is
@@ -3068,9 +3161,9 @@ int tpRunCycle(TP_STRUCT * const tp, long period) {
 		} else {
 			tpHandleRegularCycle(tp, tc, nexttc);
 		}
-	}
-	//} else {
-    //}
+	} else {
+		tpHandleDirectCycle(tp, tc, nexttc);
+    }
 
 	// Added by Roby/Mukul
 	double mag;

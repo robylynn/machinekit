@@ -31,6 +31,7 @@ static vtp_t vtp = {
     .tpSetCurrentPos   = tpSetCurrentPos,
     .tpAddRigidTap     = tpAddRigidTap,
     .tpAddLine         = tpAddLine,
+    .tpAddDirectPoint  = tpAddDirectPoint,
     .tpAddCircle       = tpAddCircle,
     .tpRunCycle        = tpRunCycle,
     .tpPause           = tpPause,

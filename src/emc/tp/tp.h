@@ -55,6 +55,16 @@ typedef int (*tpAddLine_t)(TP_STRUCT * tp,
 			   char atspeed,
 			   int indexrotary,
 			    struct state_tag_t tag);
+typedef int (*tpAddDirectPoint_t)(TP_STRUCT * tp,
+			   EmcPose end,
+			   int type,
+			   double vel,
+			   double ini_maxvel,
+			   double acc,
+			   unsigned char enables,
+			   char atspeed,
+			   int indexrotary,
+			    struct state_tag_t tag);
 typedef int (*tpAddCircle_t)(TP_STRUCT * tp,
 			     EmcPose end,
 			     PmCartesian center,
@@ -111,6 +121,7 @@ typedef struct {
     tpSetCurrentPos_t   tpSetCurrentPos;
     tpAddRigidTap_t	tpAddRigidTap;
     tpAddLine_t	        tpAddLine;
+    tpAddDirectPoint_t		tpAddDirectPoint;
     tpAddCircle_t	tpAddCircle;
     tpRunCycle_t	tpRunCycle;
     tpPause_t	        tpPause;
