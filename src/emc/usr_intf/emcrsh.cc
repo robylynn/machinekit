@@ -437,7 +437,7 @@ typedef enum {
   scProgramAngularUnits, scUserLinearUnits, scUserAngularUnits, scDisplayLinearUnits,
   scDisplayAngularUnits, scLinearUnitConversion,  scAngularUnitConversion, scProbeClear, 
   scProbeTripped, scProbeValue, scProbe, scTeleopEnable, scKinematicsType, scOverrideLimits, 
-  scSpindleOverride, scOptionalStop, scUnknown
+  scSpindleOverride, scOptionalStop, scDirectPoint, scUnknown
   } setCommandType;
   
 typedef enum {
@@ -486,7 +486,7 @@ const char *setCommands[] = {
   "USER_LINEAR_UNITS", "USER_ANGULAR_UNITS", "DISPLAY_LINEAR_UNITS", "DISPLAY_ANGULAR_UNITS", 
   "LINEAR_UNIT_CONVERSION", "ANGULAR_UNIT_CONVERSION", "PROBE_CLEAR", "PROBE_TRIPPED", 
   "PROBE_VALUE", "PROBE", "TELEOP_ENABLE", "KINEMATICS_TYPE", "OVERRIDE_LIMITS", 
-  "SPINDLE_OVERRIDE", "OPTIONAL_STOP", ""};
+  "SPINDLE_OVERRIDE", "OPTIONAL_STOP", "DIRECT_POINT", ""};
 
 const char *commands[] = {"HELLO", "SET", "GET", "QUIT", "SHUTDOWN", "HELP", ""};
 
@@ -1208,6 +1208,38 @@ static cmdResponseType setOptionalStop(char *s, connectionRecType *context)
   return rtNoError;
 }
 
+static cmdResponseType setDirectPoint(char *s, connectionRecType *context)
+{
+	  float x, y, z;
+	  char *pch;
+
+	  pch = strtok(NULL, delims);
+	  if (pch == NULL) return rtStandardError;
+	  if (sscanf(pch, "%f", &x) <= 0) return rtStandardError;
+
+	  pch = strtok(NULL, delims);
+	  if (pch == NULL) return rtStandardError;
+	  if (sscanf(pch, "%f", &y) <= 0) return rtStandardError;
+
+	  pch = strtok(NULL, delims);
+	  if (pch == NULL) return rtStandardError;
+	  if (sscanf(pch, "%f", &z) <= 0) return rtStandardError;
+
+	  //sendProbe(x, y, z);
+	  sendDirectPoint(x, y, z);
+	  return rtNoError;
+
+	//int value;
+	//sscanf(s, "%d", &value);
+	/* *int value;
+
+  sscanf(s, "%d", &value);
+  if (sendSetOptionalStop(value) != 0) return rtStandardError;
+  return rtNoError;
+  */
+
+}
+
 int commandSet(connectionRecType *context)
 {
   static const char *setNakStr = "SET NAK\n\r";
@@ -1312,6 +1344,7 @@ int commandSet(connectionRecType *context)
     case scOverrideLimits: ret = setOverrideLimits(strtok(NULL, delims), context); break;
     case scSpindleOverride: ret = setSpindleOverride(strtok(NULL, delims), context); break;
     case scOptionalStop: ret = setOptionalStop(strtok(NULL, delims), context); break;
+    case scDirectPoint: ret = setDirectPoint(pch, context); break;
     case scUnknown: ret = rtStandardError;
     }
   switch (ret) {

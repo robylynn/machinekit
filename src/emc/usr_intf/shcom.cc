@@ -1304,6 +1304,30 @@ int sendProbe(double x, double y, double z)
     return 0;
 }
 
+int sendDirectPoint(double x, double y, double z)
+{
+    EMC_TRAJ_LINEAR_MOVE emc_direct_point;
+
+    //TODO fix DIRECT
+    emc_direct_point.feed_mode = 3;
+    emc_direct_point.end.tran.x = x;
+    emc_direct_point.end.tran.y = y;
+    emc_direct_point.end.tran.z = z;
+    //emc_probe_msg.pos.tran.y = y;
+    //emc_probe_msg.pos.tran.z = z;
+
+
+    emc_direct_point.serial_number = ++emcCommandSerialNumber;
+    emcCommandBuffer->write(emc_direct_point);
+    if (emcWaitType == EMC_WAIT_RECEIVED) {
+	return emcCommandWaitReceived(emcCommandSerialNumber);
+    } else if (emcWaitType == EMC_WAIT_DONE) {
+	return emcCommandWaitDone(emcCommandSerialNumber);
+    }
+
+    return 0;
+}
+
 int iniLoad(const char *filename)
 {
     IniFile inifile;

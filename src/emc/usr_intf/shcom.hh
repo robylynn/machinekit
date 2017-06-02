@@ -142,6 +142,7 @@ extern int sendAxisLoadComp(int axis, const char *file, int type);
 extern int sendSetTeleopEnable(int enable);
 extern int sendClearProbeTrippedFlag();
 extern int sendProbe(double x, double y, double z);
+extern int sendDirectPoint(double x, double y, double z);
 extern int iniLoad(const char *filename);
 extern int checkStatus();
 
