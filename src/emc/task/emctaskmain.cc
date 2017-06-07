@@ -1076,11 +1076,10 @@ static int emcTaskPlan(void)
 			case EMC_TASK_PLAN_OPTIONAL_STOP_TYPE:
 			case EMC_TRAJ_CLEAR_PROBE_TRIPPED_FLAG_TYPE:
 			case EMC_TRAJ_PROBE_TYPE:
-			//ROBY CLEANUP
-			case EMC_TRAJ_LINEAR_MOVE_TYPE:
 			case EMC_AUX_INPUT_WAIT_TYPE:
 			case EMC_TRAJ_RIGID_TAP_TYPE:
 			case EMC_SET_DEBUG_TYPE:
+  	        case EMC_TRAJ_LINEAR_MOVE_TYPE:
 				retval = emcTaskIssueCommand(emcCommand);
 				break;
 
@@ -1814,13 +1813,20 @@ static int emcTaskIssueCommand(NMLmsg * cmd)
     emcTrajUpdateTag(((EMC_TRAJ_LINEAR_MOVE *) cmd)->tag);
 	emcTrajLinearMoveMsg = (EMC_TRAJ_LINEAR_MOVE *) cmd;
 	// TODO msati3: Find where linear move type is set and set feed mode there
-	if (emcTrajLinearMoveMsg->feed_mode == DIRECT) {
+	if (emcTrajLinearMoveMsg->feed_mode == DIRECT || emcTrajLinearMoveMsg->feed_mode == DIRECT_MULTIPLE) {
 		emcTrajLinearMoveMsg->type = EMC_MOTION_TYPE_DIRECT;
 	}
         retval = emcTrajLinearMove(emcTrajLinearMoveMsg->end,
                                    emcTrajLinearMoveMsg->type, emcTrajLinearMoveMsg->vel,
                                    emcTrajLinearMoveMsg->ini_maxvel, emcTrajLinearMoveMsg->acc,
                                    emcTrajLinearMoveMsg->indexrotary);
+    	if (emcTrajLinearMoveMsg->feed_mode == DIRECT_MULTIPLE) {
+    		emcTrajLinearMoveMsg->end.tran.x = emcTrajLinearMoveMsg->end.tran.x + 0.05;
+            retval = emcTrajLinearMove(emcTrajLinearMoveMsg->end,
+                                       emcTrajLinearMoveMsg->type, emcTrajLinearMoveMsg->vel,
+                                       emcTrajLinearMoveMsg->ini_maxvel, emcTrajLinearMoveMsg->acc,
+                                       emcTrajLinearMoveMsg->indexrotary);
+    	}
 	break;
 
     case EMC_TRAJ_CIRCULAR_MOVE_TYPE:

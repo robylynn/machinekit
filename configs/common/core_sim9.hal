@@ -6,9 +6,11 @@ loadrt trivkins
 # motion controller, get name and thread periods from ini file
 # trajectory planner
 loadrt tp
-loadrt [EMCMOT]EMCMOT servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AXES tp=tp kins=trivkins
+loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[TRAJ]AXES tp=tp kins=trivkins
 # load 6 differentiators (for velocity and accel signals
 loadrt ddt names=ddt_x,ddt_xv,ddt_y,ddt_yv,ddt_z,ddt_zv
+# load stepgen and create fast thread for it
+loadrt stepgen step_type=0,0 ctrl_type=p,p
 # load additional blocks
 loadrt hypot names=vel_xy,vel_xyz
 
@@ -24,11 +26,15 @@ addf ddt_z servo-thread
 addf ddt_zv servo-thread
 addf vel_xy servo-thread
 addf vel_xyz servo-thread
+# link the step gen functions into the code
+addf stepgen.update-freq servo-thread
+addf stepgen.capture-position servo-thread
+addf stepgen.make-pulses base-thread
 
 # create HAL signals for position commands from motion module
 # loop position commands back to motion module feedback
-net Xpos axis.0.motor-pos-cmd => axis.0.motor-pos-fb ddt_x.in
-net Ypos axis.1.motor-pos-cmd => axis.1.motor-pos-fb ddt_y.in
+net Xpos axis.0.motor-pos-cmd => ddt_x.in stepgen.0.position-cmd
+net Ypos axis.1.motor-pos-cmd => ddt_y.in stepgen.1.position-cmd
 net Zpos axis.2.motor-pos-cmd => axis.2.motor-pos-fb ddt_z.in
 net Apos axis.3.motor-pos-cmd => axis.3.motor-pos-fb
 net Bpos axis.4.motor-pos-cmd => axis.4.motor-pos-fb
@@ -36,6 +42,8 @@ net Cpos axis.5.motor-pos-cmd => axis.5.motor-pos-fb
 net Upos axis.6.motor-pos-cmd => axis.6.motor-pos-fb
 net Vpos axis.7.motor-pos-cmd => axis.7.motor-pos-fb
 net Wpos axis.8.motor-pos-cmd => axis.8.motor-pos-fb
+net Xpos_fb stepgen.0.position-fb => axis.0.motor-pos-fb
+net Ypos_fb stepgen.1.position-fb => axis.1.motor-pos-fb
 
 # send the position commands thru differentiators to
 # generate velocity and accel signals
@@ -64,3 +72,17 @@ net spindle-rev motion.spindle-reverse
 net lube iocontrol.0.lube
 net flood iocontrol.0.coolant-flood
 net mist iocontrol.0.coolant-mist
+
+# Set stepgen parameters
+setp stepgen.0.maxvel [AXIS_0]MAX_VELOCITY
+setp stepgen.1.maxvel [AXIS_1]MAX_VELOCITY
+setp stepgen.0.maxaccel [AXIS_0]MAX_ACCELERATION
+setp stepgen.1.maxaccel [AXIS_0]MAX_ACCELERATION
+setp stepgen.0.steplen 50
+setp stepgen.1.steplen 50
+setp stepgen.0.stepspace 50
+setp stepgen.1.stepspace 50
+setp stepgen.0.position-scale 1000
+setp stepgen.1.position-scale 1000
+setp stepgen.0.enable 1
+setp stepgen.1.enable 1

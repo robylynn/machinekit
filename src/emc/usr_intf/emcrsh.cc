@@ -1225,19 +1225,8 @@ static cmdResponseType setDirectPoint(char *s, connectionRecType *context)
 	  if (pch == NULL) return rtStandardError;
 	  if (sscanf(pch, "%f", &z) <= 0) return rtStandardError;
 
-	  //sendProbe(x, y, z);
 	  sendDirectPoint(x, y, z);
 	  return rtNoError;
-
-	//int value;
-	//sscanf(s, "%d", &value);
-	/* *int value;
-
-  sscanf(s, "%d", &value);
-  if (sendSetOptionalStop(value) != 0) return rtStandardError;
-  return rtNoError;
-  */
-
 }
 
 int commandSet(connectionRecType *context)

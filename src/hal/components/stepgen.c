@@ -442,6 +442,10 @@ static CONTROL parse_ctrl_type(const char *ctrl);
 *                       INIT AND EXIT CODE                             *
 ************************************************************************/
 
+// TODO msati3: Collect data here is higher resolution is wanted.
+// static int* countsX, *countsY;
+// static int len;
+
 int rtapi_app_main(void)
 {
     int n, retval;
@@ -538,6 +542,13 @@ int rtapi_app_main(void)
     rtapi_print_msg(RTAPI_MSG_INFO,
 	"STEPGEN: installed %d step pulse generators\n", num_chan);
     hal_ready(comp_id);
+
+    // TODO msati3: Populate data collection logic and set up to collect 20 seconds of data
+    // if greater temporal resolution is desired
+    // countsX = malloc(sizeof(int)*200000);
+    // countsY = malloc(sizeof(int)*200000);
+    // len = 0;
+
     return 0;
 }
 
@@ -636,6 +647,20 @@ static void make_pulses(void *arg, long period)
 	    step_now &= (1L << PICKOFF);
 	    /* update rawcounts parameter */
 	    stepgen->rawcount = stepgen->accum >> PICKOFF;
+
+	    // TODO msati3: See if we need finer data collection.
+	    /*if (n == 0 && len < 200000) countsX[len] = stepgen->rawcount;
+	    if (n == 1 && len < 200000) {
+	    	countsY[len] = stepgen->rawcount;
+	    	len++;
+	    	if (len == 200000) {
+	    	    rtapi_print_msg(RTAPI_MSG_ERR, "Accumulated counts");
+	    	    int i;
+	    	    for (i = 0; i < 200000; ++i) {
+	    	    	rtapi_print_msg(RTAPI_MSG_ERR, "%d %d", countsX[i], countsY[i]);
+	    	    }
+	    	}
+	    }*/
 	} else {
 	    /* DDS is in hold, no steps */
 	    step_now = 0;

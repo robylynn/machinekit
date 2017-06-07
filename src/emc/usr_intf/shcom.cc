@@ -1308,13 +1308,44 @@ int sendDirectPoint(double x, double y, double z)
 {
     EMC_TRAJ_LINEAR_MOVE emc_direct_point;
 
-    //TODO fix DIRECT
-    emc_direct_point.feed_mode = 3;
+    //TODO fix DIRECT_MULTIPLE
+    emc_direct_point.feed_mode = 4;
     emc_direct_point.end.tran.x = x;
     emc_direct_point.end.tran.y = y;
     emc_direct_point.end.tran.z = z;
-    //emc_probe_msg.pos.tran.y = y;
-    //emc_probe_msg.pos.tran.z = z;
+    emc_direct_point.indexrotary = -1;
+
+    // TODO mimic this for a straight copy.
+    /*EMC_TRAJ_LINEAR_MOVE linearMoveMsg;
+    linearMoveMsg.feed_mode = feed_mode;
+
+    // now x, y, z, and b are in absolute mm or degree units
+    linearMoveMsg.end.tran.x = TO_EXT_LEN(x);
+    linearMoveMsg.end.tran.y = TO_EXT_LEN(y);
+    linearMoveMsg.end.tran.z = TO_EXT_LEN(z);
+
+    linearMoveMsg.end.u = TO_EXT_LEN(u);
+    linearMoveMsg.end.v = TO_EXT_LEN(v);
+    linearMoveMsg.end.w = TO_EXT_LEN(w);
+
+    // fill in the orientation
+    linearMoveMsg.end.a = TO_EXT_ANG(a);
+    linearMoveMsg.end.b = TO_EXT_ANG(b);
+    linearMoveMsg.end.c = TO_EXT_ANG(c);
+
+    linearMoveMsg.vel = toExtVel(vel);
+    linearMoveMsg.ini_maxvel = toExtVel(linedata.vel);
+    AccelData lineaccdata = getStraightAcceleration(x, y, z, a, b, c, u, v, w);
+    double acc = lineaccdata.acc;
+    linearMoveMsg.acc = toExtAcc(acc);
+
+    linearMoveMsg.type = EMC_MOTION_TYPE_FEED;
+    linearMoveMsg.indexrotary = -1;
+    if ((vel && acc) || synched) {
+        interp_list.set_line_number(line_no);
+        tag_and_send(linearMoveMsg,pos.tag);
+    }
+    canonUpdateEndPoint(x, y, z, a, b, c, u, v, w);*/
 
 
     emc_direct_point.serial_number = ++emcCommandSerialNumber;

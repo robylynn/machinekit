@@ -3186,12 +3186,6 @@ int tpRunCycle(TP_STRUCT * const tp, long period) {
 			disp.tran.x, disp.tran.y, disp.tran.z);
 	fOut = 1;
 
-	/*int i = 0;
-	 for (i = 0; i < 9; i++) {
-	 syslog_async(LOG_ERR, "*MUKUL JOINT* %.4e %.4e", log_joint_pos[i], log_joint_vel[i]);
-	 }
-	 syslog_async(LOG_ERR, "\n");*/
-
 #ifdef TC_DEBUG
 	double mag;
 	EmcPose disp;
