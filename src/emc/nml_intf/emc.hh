@@ -125,6 +125,7 @@ struct PM_CARTESIAN;
 #define EMC_TRAJ_RESUME_TYPE                         ((NMLTYPE) 218)
 #define EMC_TRAJ_DELAY_TYPE                          ((NMLTYPE) 219)
 #define EMC_TRAJ_LINEAR_MOVE_TYPE                    ((NMLTYPE) 220)
+#define EMC_TRAJ_DIRECT_POLYLINE_TYPE				 ((NMLTYPE) 239)
 #define EMC_TRAJ_CIRCULAR_MOVE_TYPE                  ((NMLTYPE) 221)
 #define EMC_TRAJ_SET_TERM_COND_TYPE                  ((NMLTYPE) 222)
 #define EMC_TRAJ_SET_OFFSET_TYPE                     ((NMLTYPE) 223)
@@ -446,6 +447,9 @@ extern int emcTrajResume();
 extern int emcTrajDelay(double delay);
 extern int emcTrajLinearMove(EmcPose end, int type, double vel,
                              double ini_maxvel, double acc, int indexrotary);
+//ROBY Polyline input from SP, currentpoint indicates which point is executing
+extern int emcTrajDirectPolyline(const EmcPose* points, int type, double vel,
+        double ini_maxvel, double acc, int indexrotary, int currentpoint, int num_points);
 extern int emcTrajCircularMove(EmcPose end, PM_CARTESIAN center, PM_CARTESIAN
         normal, int turn, int type, double vel, double ini_maxvel, double acc);
 extern int emcTrajSetTermCond(int cond, double tolerance);

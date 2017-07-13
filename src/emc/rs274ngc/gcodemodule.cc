@@ -232,6 +232,11 @@ void STRAIGHT_FEED(int line_number,
     Py_XDECREF(result);
 }
 
+void DIRECT_POLYLINE_FEED(int line_number, std::vector<double>* points,
+						  double a, double b, double c,
+						  double u, double v, double w) {
+}
+
 void STRAIGHT_TRAVERSE(int line_number,
                        double x, double y, double z,
                        double a, double b, double c,

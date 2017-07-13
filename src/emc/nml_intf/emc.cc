@@ -699,6 +699,8 @@ const char *emc_symbol_lookup(long type)
 	return "EMC_TRAJ_INIT";
     case EMC_TRAJ_LINEAR_MOVE_TYPE:
 	return "EMC_TRAJ_LINEAR_MOVE";
+    case EMC_TRAJ_DIRECT_POLYLINE_TYPE:
+    return "EMC_TRAJ_DIRECT_POLYLINE";
     case EMC_TRAJ_PAUSE_TYPE:
 	return "EMC_TRAJ_PAUSE";
     case EMC_TRAJ_PROBE_TYPE:

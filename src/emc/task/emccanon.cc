@@ -43,6 +43,7 @@
 #include "interpl.hh"		// interp_list
 #include "emcglb.h"		// TRAJ_MAX_VELOCITY
 #include "modal_state.hh"
+#include <vector>
 
 //#define EMCCANON_DEBUG
 
@@ -137,6 +138,10 @@ struct AccelData{
 static PM_QUATERNION quat(1, 0, 0, 0);
 
 static void flush_segments(void);
+
+static void flush_direct_polyline(std::vector<double> points[3],
+		double a, double b, double c,
+		double u, double v, double w, int line_no, StateTag tag);
 
 static inline void add_tag_to_msg(NMLmsg * msg, StateTag const &tag){
     //FIXME this better be an EMC_TRAJ message or bad things will happen
@@ -975,6 +980,67 @@ static void flush_segments(void) {
     chained_points.clear();
 }
 
+static void flush_direct_polyline(std::vector<double> points[3],
+		double a, double b, double c,
+		double u, double v, double w, int line_no, StateTag tag) {
+    //int line_no = pos.line_no;
+
+    // TODO msati3: Figure out what to do for velocity and accel calculation for multiple points G code
+    VelData linedata = getStraightVelocity(points[0][0], points[1][0], points[2][0], a, b, c, u, v, w);
+    double vel = linedata.vel;
+
+    if (cartesian_move && !angular_move) {
+        if (vel > currentLinearFeedRate) {
+            vel = currentLinearFeedRate;
+        }
+    } else if (!cartesian_move && angular_move) {
+        if (vel > currentAngularFeedRate) {
+            vel = currentAngularFeedRate;
+        }
+    } else if (cartesian_move && angular_move) {
+        if (vel > currentLinearFeedRate) {
+            vel = currentLinearFeedRate;
+        }
+    }
+
+    EMC_TRAJ_DIRECT_POLYLINE polylineMoveMsg;
+    polylineMoveMsg.feed_mode = feed_mode;
+    polylineMoveMsg.num_points = points[0].size();
+
+    // now x, y, z, and b are in absolute mm or degree units
+    for (int i = 0; i < points[0].size(); ++i) {
+        polylineMoveMsg.points[i].tran.x = TO_EXT_LEN(points[0][i]);
+		polylineMoveMsg.points[i].tran.y = TO_EXT_LEN(points[1][i]);
+		polylineMoveMsg.points[i].tran.z = TO_EXT_LEN(points[2][i]);
+
+	    polylineMoveMsg.points[i].u = TO_EXT_LEN(u);
+	    polylineMoveMsg.points[i].v = TO_EXT_LEN(v);
+	    polylineMoveMsg.points[i].w = TO_EXT_LEN(w);
+
+	    // fill in the orientation
+	    polylineMoveMsg.points[i].a = TO_EXT_ANG(a);
+	    polylineMoveMsg.points[i].b = TO_EXT_ANG(b);
+	    polylineMoveMsg.points[i].c = TO_EXT_ANG(c);
+    }
+
+    polylineMoveMsg.vel = toExtVel(vel);
+    polylineMoveMsg.ini_maxvel = toExtVel(linedata.vel);
+    // TODO msati3: Figure out what to do for velocity and accel calculation for multiple points G code
+    AccelData lineaccdata = getStraightAcceleration(points[0][0], points[1][0], points[2][0], a, b, c, u, v, w);
+    double acc = lineaccdata.acc;
+    polylineMoveMsg.acc = toExtAcc(acc);
+
+    polylineMoveMsg.type = EMC_MOTION_TYPE_DIRECT_POLYLINE;
+    polylineMoveMsg.indexrotary = -1;
+    if ((vel && acc) || synched) {
+        interp_list.set_line_number(line_no);
+        tag_and_send(polylineMoveMsg, tag);
+    }
+    canonUpdateEndPoint(points[0][points[0].size()-1], points[1][points[1].size()-1],
+    		            points[2][points[2].size()-1], a, b, c, u, v, w);
+}
+
+
 static void get_last_pos(double &lx, double &ly, double &lz) {
     if(chained_points.empty()) {
         lx = canonEndPoint.x;
@@ -1110,6 +1176,17 @@ void STRAIGHT_FEED(int line_number,
     see_segment(line_number, _tag, x, y, z, a, b, c, u, v, w);
 }
 
+void DIRECT_POLYLINE_FEED(int line_number, std::vector<double> points[3],
+						  double a, double b, double c,
+						  double u, double v, double w) {
+	EMC_TRAJ_DIRECT_POLYLINE polylineMoveMsg;
+	polylineMoveMsg.feed_mode = feed_mode;
+
+	//from_prog(x,y,z,a,b,c,u,v,w);
+	//rotate_and_offset_pos(x,y,z,a,b,c,u,v,w);
+	//see_segment(line_number, _tag, x, y, z, a, b, c, u, v, w);
+	flush_direct_polyline(points, a, b, c, u, v, w, line_number, _tag);
+}
 
 void RIGID_TAP(int line_number, double x, double y, double z)
 {

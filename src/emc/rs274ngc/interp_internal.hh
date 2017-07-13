@@ -26,7 +26,7 @@
 #include "emcpos.h"
 #include "libintl.h"
 #include "python_plugin.hh"
-
+#include <vector>
 
 #define _(s) gettext(s)
 
@@ -94,7 +94,7 @@ static inline bool equal(double a, double b)
 #define MAX_EMS  4
 
 // feed_mode
-enum feed_mode { UNITS_PER_MINUTE=0, INVERSE_TIME=1, UNITS_PER_REVOLUTION=2, DIRECT=3 };
+enum feed_mode { UNITS_PER_MINUTE=0, INVERSE_TIME=1, UNITS_PER_REVOLUTION=2, DIRECT=3, DIRECT_POLYLINE=4 };
 
 // cutter radius compensation mode, 0 or false means none
 // not using CANON_SIDE since interpreter handles cutter radius comp
@@ -169,6 +169,7 @@ enum SPINDLE_MODE { CONSTANT_RPM, CONSTANT_SURFACE };
 #define G_0      0
 #define G_1     10
 #define G_1_1	11
+#define G_1_2	12
 #define G_2     20
 #define G_3     30
 #define G_4     40
@@ -378,6 +379,11 @@ typedef struct block_struct
     x_flag(0), x_number(0), y_flag(0), y_number(0),
     z_flag(0), z_number(0),
 
+//    xa_flag(0), xa_number(0), xb_flag(0), xb_number(0),
+//    xc_flag(0), xc_number(0), xd_flag(0), xd_number(0),
+    //pipe_counter(0),
+    pipe_axis(-1),
+
     radius_flag(0), radius(0), theta_flag(0), theta(0),
     offset(0), o_type(0), call_type(0), o_name(NULL),
     /* params, */ param_cnt(0), breadcrumbs(),
@@ -459,6 +465,11 @@ typedef struct block_struct
   double y_number;
   bool z_flag;
   double z_number;
+
+  //Polyline point values
+  //int pipe_counter;
+  int pipe_axis;
+  std::vector<double> axis_numbers[3];
 
   int radius_flag;
   double radius;

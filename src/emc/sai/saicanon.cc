@@ -501,6 +501,11 @@ void STRAIGHT_FEED(int line_number,
   _program_position_c = c; /*CC*/
 }
 
+void DIRECT_POLYLINE_FEED(int line_number, std::vector<double> points[3],
+						  double a, double b, double c,
+						  double u, double v, double w) {
+}
+
 
 /* This models backing the probe off 0.01 inch or 0.254 mm from the probe
 point towards the previous location after the probing, if the probe

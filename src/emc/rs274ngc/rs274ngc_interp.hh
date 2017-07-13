@@ -330,6 +330,8 @@ public:
  int convert_stop(block_pointer block, setup_pointer settings);
  int convert_straight(int move, block_pointer block,
                             setup_pointer settings);
+ int convert_direct_polyline(int move, block_pointer block,
+                             setup_pointer settings);
  int convert_straight_comp1(int move, block_pointer block,
                             setup_pointer settings,
                             double px, double py, double end_z,
@@ -509,6 +511,8 @@ public:
                   double *parameters);
  int read_z(char *line, int *counter, block_pointer block,
                   double *parameters);
+ int read_pipe(char *line, int *counter, block_pointer block,
+         double *parameters);
  int refresh_actual_position(setup_pointer settings);
  void rotate(double *x, double *y, double t);
  int set_probe_data(setup_pointer settings);
@@ -679,6 +683,8 @@ int read_inputs(setup_pointer settings);
      AXIS_MASK_A =   8, AXIS_MASK_B =  16, AXIS_MASK_C =  32,
      AXIS_MASK_U =  64, AXIS_MASK_V = 128, AXIS_MASK_W = 256,
  };
+ private:
+  void pipe_axis_changed(block_pointer block, char axis);
 };
 
 #endif

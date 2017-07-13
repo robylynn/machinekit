@@ -238,6 +238,12 @@ std::vector<CONTROL_POINT> nurbs_control_points, unsigned int k)
 
 }
 
+void DIRECT_POLYLINE_FEED(int line_number, std::vector<double> points,
+						  double a, double b, double c,
+						  double u, double v, double w)
+{
+}
+
 void ARC_FEED(int line_number,
  double first_end, double second_end,
  double first_axis, double second_axis, int rotation, double axis_end_point
@@ -255,7 +261,7 @@ void STRAIGHT_FEED(int line_number,
  , double a /*AA*/
  , double b /*BB*/
  , double c /*CC*/
- , double u, double v, double w
+, double u, double v, double w
 )
 {
 

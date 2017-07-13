@@ -309,6 +309,11 @@ int Interp::init_block(block_pointer block)      //!< pointer to a block to be i
   block->o_name = 0;
   block->call_type = -1;
 
+  block->pipe_axis = -1;
+  for (int index = 0; index < 3; ++index) {
+    block->axis_numbers[index].clear();
+  }
+
   return INTERP_OK;
 }
 

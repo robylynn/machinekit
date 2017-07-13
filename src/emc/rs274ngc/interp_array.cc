@@ -32,7 +32,7 @@ The modal g groups and group numbers defined in [NCMS, pages 71 - 73]
 (see also [Fanuc, pages 43 - 45]) are used here, except the canned
 cycles (g80 - g89), which comprise modal g group 9 in [Fanuc], are
 treated here as being in the same modal group (group 1) with the
-straight moves and arcs (g0, g1, g2,g3).  [Fanuc, page 45] says only
+straight moves and arcs (g0, g1, g2, g3).  [Fanuc, page 45] says only
 one g_code from any one group may appear on a line, and we are
 following that rule. The straight_probe move, g38.2, is in group 1; it
 is not defined in [NCMS].
@@ -49,14 +49,14 @@ same line as those in group 1 (except g80) because they would be
 competing for the coordinate values. Others in group 0 may be used on
 the same line as those in group 1.
 
-A total of 52 G-codes are implemented.
+A total of 52 *54* G-codes are implemented.
 
 The groups are:
 group  0 = {g4,g10,g28,g30,g52,g53,g92,g92.1,g92.2,g92.3} - NON-MODAL
             dwell, setup, return to ref1, return to ref2,
             local coordinate system, motion in machine coordinates,
             set and unset axis offsets
-group  1 = {g0,g1,g1.1, g2,g3,g33,g33.1,g38.2,g38.3,g38.4,g38.5,g73,g76,g80,
+group  1 = {g0,g1,g1.1,g1.2,g2,g3,g33,g33.1,g38.2,g38.3,g38.4,g38.5,g73,g76,g80,
             g81,g82,g83,g84,g85,g86,g87,g88,g89} - motion
 group  2 = {g17,g17.1,g18,g18.1,g19,g19.1}   - plane selection
 group  3 = {g90,g91}       - distance mode
@@ -74,7 +74,7 @@ group 15 = {G07,G08}       - lathe diameter mode
 // This stops indent from reformatting the following code.
 // *INDENT-OFF*
 const int Interp::_gees[] = {
-/*   0 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1, 1,-1,-1,-1,-1,-1,-1,-1,-1,
+/*   0 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1, 1, 1,-1,-1,-1,-1,-1,-1,-1,
 /*  20 */   1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  40 */ //0,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
 /*  40 */   0,-1,-1,-1,-1,-1,-1,-1,-1,-1, 1, 1, 1, 0,-1,-1,-1,-1,-1,-1,
@@ -305,7 +305,10 @@ const read_function_pointer Interp::default_readers[256] = {
 &Interp::read_w,
 &Interp::read_x, // reads x or ASCII 0x78
 &Interp::read_y, // reads y or ASCII 0x79
-&Interp::read_z}; // reads z or ASCII 0x7A
+&Interp::read_z, // reads z or ASCII 0x7A
+//ROBY added for polyline primitive
+0,
+&Interp::read_pipe};
 // *INDENT-ON*
 // And now indent can continue.
 /****************************************************************************/

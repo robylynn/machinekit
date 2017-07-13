@@ -410,6 +410,10 @@ extern void NURBS_FEED(int lineno, std::vector<CONTROL_POINT> nurbs_control_poin
  * of control points
  */
 
+extern void DIRECT_POLYLINE_FEED(int line_number, std::vector<double> points[3],
+						  double a, double b, double c,
+						  double u, double v, double w);
+
 /* Move at existing feed rate so that at any time during the move,
 all axes have covered the same proportion of their required motion.
 The meanings of the parameters is the same as for STRAIGHT_TRAVERSE.*/

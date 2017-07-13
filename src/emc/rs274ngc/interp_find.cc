@@ -247,16 +247,15 @@ int Interp::find_ends(block_pointer block,       //!< pointer to a block of RS27
             *w_p = s->w_current;
         }
     } else if (s->distance_mode == MODE_ABSOLUTE) {
-
         if(block->x_flag) {
-            *px = block->x_number;
+        	*px = (block->axis_numbers[0].size() == 0) ? block->x_number : block->axis_numbers[0][block->axis_numbers[0].size()-1];
         } else {
             // both cutter comp planes affect X ...
             *px = (comp && middle) ? s->program_x : s->current_x;
         }
 
         if(block->y_flag) {
-            *py = block->y_number;
+        	*py = (block->axis_numbers[1].size() == 0) ? block->y_number : block->axis_numbers[1][block->axis_numbers[1].size()-1];
         } else {
             // but only XY affects Y ...
             *py = (comp && middle && s->plane == CANON_PLANE_XY) ? s->program_y : s->current_y;
@@ -282,7 +281,7 @@ int Interp::find_ends(block_pointer block,       //!< pointer to a block of RS27
         }
 
         if(block->z_flag) {
-            *pz = block->z_number;
+            *pz = (block->axis_numbers[2].size() == 0) ? block->z_number : block->axis_numbers[2][block->axis_numbers[2].size()-1];
         } else {
             // and only XZ affects Z.
             *pz = (comp && middle && s->plane == CANON_PLANE_XZ) ? s->program_z : s->current_z;

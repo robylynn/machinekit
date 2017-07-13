@@ -27,6 +27,8 @@
 #include "rs274ngc_interp.hh"
 #include "interp_internal.hh"
 #include "interp_queue.hh"
+#include <vector>
+#include "canon.hh"
 
 #include "units.h"
 #define TOOL_INSIDE_ARC(side, turn) (((side)==LEFT&&(turn)>0)||((side)==RIGHT&&(turn)<0))
@@ -3539,6 +3541,8 @@ int Interp::convert_motion(int motion,   //!< g_code for a line, arc, canned cyc
     CHP(convert_straight_indexer(n, block, settings));
   } else if ((motion == G_0) || (motion == G_1) || (motion == G_1_1) || (motion == G_33) || (motion == G_33_1) || (motion == G_76)) {
     CHP(convert_straight(motion, block, settings));
+  } else if (motion == G_1_2) {
+	CHP(convert_direct_polyline(motion, block, settings));
   } else if ((motion == G_3) || (motion == G_2)) {
     CHP(convert_arc(motion, block, settings));
   } else if (motion == G_38_2 || motion == G_38_3 || 
@@ -4589,6 +4593,131 @@ int Interp::convert_straight(int move,   //!< either G_0 or G_1
     if(result != INTERP_OK) return result;
   } else
     ERS(NCE_BUG_CODE_NOT_G0_OR_G1);
+
+  settings->AA_current = AA_end;
+  settings->BB_current = BB_end;
+  settings->CC_current = CC_end;
+  settings->u_current = u_end;
+  settings->v_current = v_end;
+  settings->w_current = w_end;
+  return INTERP_OK;
+}
+
+int Interp::convert_direct_polyline(int move,   		//G_1_2
+                            block_pointer block,        //!< pointer to a block of RS274 instructions
+                            setup_pointer settings)     //!< pointer to machine settings
+{
+  double end_x;
+  double end_y;
+  double end_z;
+  double AA_end;
+  double BB_end;
+  double CC_end;
+  double u_end, v_end, w_end;
+  int status;
+
+  settings->arc_not_allowed = false;
+
+
+  if (settings->feed_mode == UNITS_PER_MINUTE) {
+    CHKS((settings->feed_rate == 0.0), NCE_CANNOT_DO_G1_WITH_ZERO_FEED_RATE);
+  } else if (settings->feed_mode == UNITS_PER_REVOLUTION) {
+    CHKS((settings->feed_rate == 0.0), NCE_CANNOT_DO_G1_WITH_ZERO_FEED_RATE);
+    CHKS((settings->speed == 0.0), _("Cannot feed with zero spindle speed in feed per rev mode"));
+  } else if (settings->feed_mode == INVERSE_TIME) {
+    CHKS((!block->f_flag),
+	    NCE_F_WORD_MISSING_WITH_INVERSE_TIME_G1_MOVE);
+  }
+
+  settings->motion_mode = move;
+  CHP(find_ends(block, settings, &end_x, &end_y, &end_z,
+                &AA_end, &BB_end, &CC_end, &u_end, &v_end, &w_end));
+
+//  if (move == G_1) {
+//      inverse_time_rate_straight(end_x, end_y, end_z,
+//                                 AA_end, BB_end, CC_end,
+//                                 u_end, v_end, w_end,
+//                                 block, settings);
+//  }
+  if ( move == G_1_2 ) {
+  	settings->feed_mode =  DIRECT_POLYLINE;
+  	enqueue_SET_FEED_MODE( DIRECT_POLYLINE );
+
+
+    // Create a state tag and dump it to canon
+    StateTag tag;
+    write_state_tag(block, settings, tag);
+    update_tag(tag);
+
+//  if ((settings->cutter_comp_side) &&    /* ! "== true" */
+//      (settings->cutter_comp_radius > 0.0)) {   /* radius always is >= 0 */
+//
+//    CHKS((block->g_modes[0] == G_53),
+//        NCE_CANNOT_USE_G53_WITH_CUTTER_RADIUS_COMP);
+//
+//    if(settings->plane == CANON_PLANE_XZ) {
+//        if (settings->cutter_comp_firstmove)
+//            status = convert_straight_comp1(move, block, settings, end_z, end_x, end_y,
+//                                            AA_end, BB_end, CC_end, u_end, v_end, w_end);
+//        else
+//            status = convert_straight_comp2(move, block, settings, end_z, end_x, end_y,
+//                                            AA_end, BB_end, CC_end, u_end, v_end, w_end);
+//    } else if(settings->plane == CANON_PLANE_XY) {
+//        if (settings->cutter_comp_firstmove)
+//            status = convert_straight_comp1(move, block, settings, end_x, end_y, end_z,
+//                                            AA_end, BB_end, CC_end, u_end, v_end, w_end);
+//        else
+//            status = convert_straight_comp2(move, block, settings, end_x, end_y, end_z,
+//                                            AA_end, BB_end, CC_end, u_end, v_end, w_end);
+//    } else ERS("BUG: Invalid plane for cutter compensation");
+//    CHP(status);
+//  } else if (move == G_0) {
+//    STRAIGHT_TRAVERSE(block->line_number, end_x, end_y, end_z,
+//                      AA_end, BB_end, CC_end,
+//                      u_end, v_end, w_end);
+//    settings->current_x = end_x;
+//    settings->current_y = end_y;
+//    settings->current_z = end_z;
+//  } else if (move == G_1 || move == G_1_1) {
+
+    DIRECT_POLYLINE_FEED(block->line_number, block->axis_numbers, AA_end, BB_end, CC_end,
+                  u_end, v_end, w_end);
+
+
+    settings->current_x = end_x;
+    settings->current_y = end_y;
+    settings->current_z = end_z;
+
+//} else if (move == G_33) {
+//    CHKS(((settings->spindle_turning != CANON_CLOCKWISE) &&
+//           (settings->spindle_turning != CANON_COUNTERCLOCKWISE)),
+//          _("Spindle not turning in G33"));
+//    START_SPEED_FEED_SYNCH(block->k_number, 0);
+//    STRAIGHT_FEED(block->line_number, end_x, end_y, end_z, AA_end, BB_end, CC_end, u_end, v_end, w_end);
+//    STOP_SPEED_FEED_SYNCH();
+//    settings->current_x = end_x;
+//    settings->current_y = end_y;
+//    settings->current_z = end_z;
+//  } else if (move == G_33_1) {
+//    CHKS(((settings->spindle_turning != CANON_CLOCKWISE) &&
+//           (settings->spindle_turning != CANON_COUNTERCLOCKWISE)),
+//          _("Spindle not turning in G33.1"));
+//    START_SPEED_FEED_SYNCH(block->k_number, 0);
+//    RIGID_TAP(block->line_number, end_x, end_y, end_z);
+//    STOP_SPEED_FEED_SYNCH();
+//    // after the RIGID_TAP cycle we'll be in the same spot
+//  } else if (move == G_76) {
+//    CHKS((settings->AA_current != AA_end ||
+//         settings->BB_current != BB_end ||
+//         settings->CC_current != CC_end ||
+//         settings->u_current != u_end ||
+//         settings->v_current != v_end ||
+//         settings->w_current != w_end), NCE_CANNOT_MOVE_ROTARY_AXES_WITH_G76);
+//    int result = convert_threading_cycle(block, settings, end_x, end_y, end_z);
+//    if(result != INTERP_OK) return result;
+  } else {
+    ERS(NCE_BUG_CODE_NOT_G0_OR_G1);
+  }
 
   settings->AA_current = AA_end;
   settings->BB_current = BB_end;

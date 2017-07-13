@@ -1029,6 +1029,36 @@ int emcTrajLinearMove(EmcPose end, int type, double vel, double ini_maxvel, doub
     return usrmotWriteEmcmotCommand(&emcmotCommand);
 }
 
+int emcTrajDirectPolyline(const EmcPose* points, int type, double vel, double ini_maxvel, double acc,
+                          int indexrotary, int current_point, int num_points)
+{
+	EmcPose end = points[num_points];
+#ifdef ISNAN_TRAP
+    if (rtapi_isnan(end.tran.x) || rtapi_isnan(end.tran.y) || rtapi_isnan(end.tran.z) ||
+        rtapi_isnan(end.a) || rtapi_isnan(end.b) || rtapi_isnan(end.c) ||
+        rtapi_isnan(end.u) || rtapi_isnan(end.v) || rtapi_isnan(end.w)) {
+	printf("isnan error in emcTrajLinearMove()\n");
+	return 0;		// ignore it for now, just don't send it
+    }
+#endif
+    emcmotCommand.command = EMCMOT_DIRECT_POLYLINE;
+    emcmotCommand.num_points = num_points;
+    for (int i = 0; i < num_points; ++i) {
+    	emcmotCommand.points[i] = points[i];
+    }
+
+    emcmotCommand.id = localEmcTrajMotionId;
+    emcmotCommand.tag = localEmcTrajTag;
+    emcmotCommand.motion_type = type;
+    emcmotCommand.vel = vel;
+    emcmotCommand.ini_maxvel = ini_maxvel;
+    emcmotCommand.acc = acc;
+    emcmotCommand.turn = indexrotary;
+    emcmotCommand.current_point = current_point;
+
+    return usrmotWriteEmcmotCommand(&emcmotCommand);
+}
+
 int emcTrajCircularMove(EmcPose end, PM_CARTESIAN center,
 			PM_CARTESIAN normal, int turn, int type, double vel, double ini_maxvel, double acc)
 {

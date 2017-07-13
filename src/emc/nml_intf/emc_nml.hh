@@ -794,6 +794,24 @@ class EMC_TRAJ_LINEAR_MOVE:public EMC_TRAJ_CMD_MSG {
     int indexrotary;
 };
 
+class EMC_TRAJ_DIRECT_POLYLINE:public EMC_TRAJ_CMD_MSG {
+  public:
+    EMC_TRAJ_DIRECT_POLYLINE():EMC_TRAJ_CMD_MSG(EMC_TRAJ_DIRECT_POLYLINE_TYPE,
+					    sizeof(EMC_TRAJ_DIRECT_POLYLINE)) {
+    };
+
+    // For internal NML/CMS use only.
+    void update(CMS * cms);
+
+    int type;
+    EmcPose points[10];
+    double vel, ini_maxvel, acc;
+    int feed_mode;
+    int num_points;
+    int indexrotary;
+    int currentpoint;
+};
+
 class EMC_TRAJ_CIRCULAR_MOVE:public EMC_TRAJ_CMD_MSG {
   public:
     EMC_TRAJ_CIRCULAR_MOVE():EMC_TRAJ_CMD_MSG(EMC_TRAJ_CIRCULAR_MOVE_TYPE,

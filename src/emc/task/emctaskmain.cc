@@ -388,6 +388,7 @@ static EMC_TRAJ_SET_SPINDLE_SCALE *emcTrajSetSpindleScaleMsg;
 static EMC_TRAJ_SET_VELOCITY *emcTrajSetVelocityMsg;
 static EMC_TRAJ_SET_ACCELERATION *emcTrajSetAccelerationMsg;
 static EMC_TRAJ_LINEAR_MOVE *emcTrajLinearMoveMsg;
+static EMC_TRAJ_DIRECT_POLYLINE *emcTrajDirectPolylineMsg;
 static EMC_TRAJ_CIRCULAR_MOVE *emcTrajCircularMoveMsg;
 static EMC_TRAJ_DELAY *emcTrajDelayMsg;
 static EMC_TRAJ_SET_TERM_COND *emcTrajSetTermCondMsg;
@@ -1499,6 +1500,7 @@ static int emcTaskCheckPreconditions(NMLmsg * cmd)
 
     case EMC_TRAJ_LINEAR_MOVE_TYPE:
     case EMC_TRAJ_CIRCULAR_MOVE_TYPE:
+    case EMC_TRAJ_DIRECT_POLYLINE_TYPE:
     case EMC_TRAJ_SET_VELOCITY_TYPE:
     case EMC_TRAJ_SET_ACCELERATION_TYPE:
     case EMC_TRAJ_SET_TERM_COND_TYPE:
@@ -1821,6 +1823,17 @@ static int emcTaskIssueCommand(NMLmsg * cmd)
                                    emcTrajLinearMoveMsg->type, emcTrajLinearMoveMsg->vel,
                                    emcTrajLinearMoveMsg->ini_maxvel, emcTrajLinearMoveMsg->acc,
                                    emcTrajLinearMoveMsg->indexrotary);
+	break;
+
+
+    case EMC_TRAJ_DIRECT_POLYLINE_TYPE:
+	emcTrajUpdateTag(((EMC_TRAJ_DIRECT_POLYLINE *) cmd)->tag);
+	emcTrajDirectPolylineMsg = (EMC_TRAJ_DIRECT_POLYLINE *) cmd;
+	// TODO msati3: Find where linear move type is set and set feed mode there
+	retval = emcTrajDirectPolyline(emcTrajDirectPolylineMsg->points,
+				emcTrajDirectPolylineMsg->type, emcTrajDirectPolylineMsg->vel,
+				emcTrajDirectPolylineMsg->ini_maxvel, emcTrajDirectPolylineMsg->acc,
+				emcTrajDirectPolylineMsg->indexrotary, 0, emcTrajDirectPolylineMsg->num_points);
 	break;
 
     case EMC_TRAJ_CIRCULAR_MOVE_TYPE:
@@ -2397,6 +2410,7 @@ static int emcTaskCheckPostconditions(NMLmsg * cmd)
 
     case EMC_TRAJ_LINEAR_MOVE_TYPE:
     case EMC_TRAJ_CIRCULAR_MOVE_TYPE:
+    case EMC_TRAJ_DIRECT_POLYLINE_TYPE:
     case EMC_TRAJ_SET_VELOCITY_TYPE:
     case EMC_TRAJ_SET_ACCELERATION_TYPE:
     case EMC_TRAJ_SET_TERM_COND_TYPE:

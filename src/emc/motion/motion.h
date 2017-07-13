@@ -89,8 +89,6 @@ to another.
 #include <stdarg.h>
 #include "state_tag.h"
 
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -140,6 +138,7 @@ extern "C" {
     EMCMOT_JOG_ABS = 28,           /* absolute jog */
     EMCMOT_SET_LINE = 29,          /* queue up a linear move */
     EMCMOT_DIRECT_POINT = 66,	   /* queue direct point from SP */
+    EMCMOT_DIRECT_POLYLINE = 67,   /* queue direct polyline from SP */
     EMCMOT_SET_CIRCLE = 30,        /* queue up a circular move */
     EMCMOT_SET_TELEOP_VECTOR = 31, /* Move at a given velocity but in
                                       world Cartesian coordinates, not
@@ -250,7 +249,7 @@ extern "C" {
                                      |1 = suppress error, report in # instead
                                      ~2 = move until probe trips (ngc default)
                                      |2 = move until probe clears */
-        EmcPose tool_offset;        /* TLO */
+    EmcPose tool_offset;        /* TLO */
 	double  orientation;    /* angle for spindle orient */
 	char    direction;      /* CANON_DIRECTION flag for spindle orient */
 	double  timeout;        /* of wait for spindle orient to complete */
@@ -263,6 +262,10 @@ extern "C" {
         double arcBlendTangentKinkRatio;
         double maxFeedScale;
     struct state_tag_t tag;
+    // TODO msati3: Add variable size
+    EmcPose points[10];
+    int num_points;
+    int current_point;
     } emcmot_command_t;
 
 /*! \todo FIXME - these packed bits might be replaced with chars

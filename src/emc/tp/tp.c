@@ -2789,13 +2789,12 @@ void tpToggleDIOs(TP_STRUCT const * const tp, TC_STRUCT * const tc) {
  	double acc = 0;
  	tpDebugCycleInfo(tp, tc, nexttc, acc);
 
- 	// Consume a tc each step.
+ 	// Consume a TC each step
  	tc->progress = tc->target;
  	tc->remove = 1;
 
  	EmcPose displacement;
 
- 	// Calculate displacement
  	tcGetPos(tc, &displacement);
  	emcPoseSelfSub(&displacement, &before);
 
@@ -3155,7 +3154,7 @@ int tpRunCycle(TP_STRUCT * const tp, long period) {
 	tcClearFlags(tc);
 	tcClearFlags(nexttc);
 	// Update the current tc
-	if (tc->canon_motion_type != 7) {
+	if (tc->canon_motion_type != EMC_MOTION_TYPE_DIRECT && tc->canon_motion_type != EMC_MOTION_TYPE_DIRECT_POLYLINE) {
 		if (tc->splitting) {
 			tpHandleSplitCycle(tp, tc, nexttc);
 		} else {

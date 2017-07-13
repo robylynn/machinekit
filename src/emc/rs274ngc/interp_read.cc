@@ -1145,7 +1145,7 @@ int Interp::read_one_item(
   char letter;
 
   letter = line[*counter];      /* check if in array range */
-  CHKS(((letter < ' ') || (letter > 'z')),
+  CHKS(((letter < ' ') || (letter > '|')),
 	_("Bad character '\\%03o' used"), (unsigned char)letter);
   function_pointer = _readers[(int) letter]; /* Find the function pointer in the array */
   CHKS((function_pointer == 0),
@@ -3188,7 +3188,7 @@ int Interp::read_x(char *line,   //!< string: line of RS274 code being processed
                   double *parameters)   //!< array of system parameters                    
 {
   double value;
-
+  pipe_axis_changed(block, 'x');
   CHKS((line[*counter] != 'x'), NCE_BUG_FUNCTION_SHOULD_NOT_HAVE_BEEN_CALLED);
   *counter = (*counter + 1);
   CHKS((block->x_flag), NCE_MULTIPLE_X_WORDS_ON_ONE_LINE);
@@ -3263,7 +3263,7 @@ int Interp::read_y(char *line,   //!< string: line of RS274 code being processed
                   double *parameters)   //!< array of system parameters                    
 {
   double value;
-
+  pipe_axis_changed(block, 'y');
   CHKS((line[*counter] != 'y'), NCE_BUG_FUNCTION_SHOULD_NOT_HAVE_BEEN_CALLED);
   *counter = (*counter + 1);
   CHKS((block->y_flag), NCE_MULTIPLE_Y_WORDS_ON_ONE_LINE);
@@ -3312,7 +3312,7 @@ int Interp::read_z(char *line,   //!< string: line of RS274 code being processed
                   double *parameters)   //!< array of system parameters                    
 {
   double value;
-
+  pipe_axis_changed(block, 'z');
   CHKS((line[*counter] != 'z'), NCE_BUG_FUNCTION_SHOULD_NOT_HAVE_BEEN_CALLED);
   *counter = (*counter + 1);
   CHKS((block->z_flag), NCE_MULTIPLE_Z_WORDS_ON_ONE_LINE);
@@ -3320,6 +3320,26 @@ int Interp::read_z(char *line,   //!< string: line of RS274 code being processed
   block->z_flag = true;
   block->z_number = value;
   return INTERP_OK;
+}
+
+void Interp::pipe_axis_changed(block_pointer block, char axis) {
+	//block->pipe_counter = 0;
+	block->pipe_axis = (int)(axis -'x');
+}
+
+int Interp::read_pipe(char *line,   //!< string: line of RS274 code being processed
+                  int *counter, //!< pointer to a counter for position on the line
+                  block_pointer block,  //!< pointer to a block being filled from the line
+                  double *parameters)   //!< array of system parameters
+{
+  double value;
+  CHKS((line[*counter] != '|'), NCE_BUG_FUNCTION_SHOULD_NOT_HAVE_BEEN_CALLED);
+  *counter = (*counter + 1);
+  CHP(read_real_value(line, counter, &value, parameters));
+  block->axis_numbers[block->pipe_axis].push_back(value);
+  //block->pipe_counter++;
+  return INTERP_OK;
+
 }
 
 bool Interp::isreadonly(int index)
